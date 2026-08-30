@@ -1,0 +1,97 @@
+<mujoco model="HarnessSim4 InsertBot">
+  <compiler autolimits="true" angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81" solver="Newton" iterations="80"/>
+  <size memory="32M"/>
+  <extension>
+    <plugin plugin="mujoco.elasticity.cable"/>
+  </extension>
+  <statistic center="0 0 .22" extent="1.5"/>
+  <visual>
+    <global offwidth="1920" offheight="1080"/>
+    <headlight ambient=".20 .22 .25" diffuse=".52 .55 .58" specular=".25 .25 .25"/>
+    <quality shadowsize="8192" offsamples="4" numslices="32" numstacks="24"/>
+    <map znear=".01" zfar="8" fogstart="3" fogend="6"/>
+    <rgba haze=".12 .16 .20 1"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1=".16 .21 .28" rgb2=".015 .02 .03" width="512" height="3072"/>
+    <texture type="2d" name="factory_floor_tex" builtin="checker" mark="edge" rgb1=".16 .18 .20" rgb2=".11 .13 .15" markrgb=".35 .38 .40" width="512" height="512"/>
+    <material name="factory_floor" texture="factory_floor_tex" texuniform="true" texrepeat="8 8" reflectance=".12"/>
+    <material name="board" rgba=".22 .25 .28 1" specular=".35" shininess=".32"/>
+    <material name="wire" rgba=".85 .10 .025 1" specular=".12" shininess=".20"/>
+    <material name="robot" rgba=".12 .32 .52 1"/>
+    <material name="connector" rgba=".025 .25 .42 1" specular=".45" shininess=".4"/>
+    <material name="connector_dark" rgba=".018 .024 .030 1" specular=".24" shininess=".25"/>
+    <material name="metal" rgba=".42 .46 .50 1" specular=".72" shininess=".55"/>
+    <material name="frame" rgba=".10 .12 .14 1" specular=".55" shininess=".45"/>
+    <material name="guard" rgba=".12 .45 .62 .16" specular=".8" shininess=".7"/>
+  </asset>
+  <worldbody>
+    <light pos="-.7 -.8 2.2" dir=".25 .3 -1" directional="true" diffuse=".82 .86 .92" specular=".38 .38 .38" castshadow="true"/>
+    <light pos="1.1 -.2 1.4" dir="-.7 .1 -1" diffuse=".45 .50 .56" specular=".18 .18 .18" castshadow="true"/>
+    <light pos="-.8 .9 1.2" dir=".5 -.5 -.8" diffuse=".28 .36 .48" specular=".12 .16 .2"/>
+    <geom name="factory_floor" type="plane" size="3 3 .02" pos="0 0 -.72" material="factory_floor" contype="0" conaffinity="0"/>
+    <geom name="board" type="box" size=".72 .55 .04" pos="0 0 -.04" material="board" friction="1 .02 .002"/>
+    <geom type="box" size=".045 .045 .34" pos="-.62 -.45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos=".62 -.45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos="-.62 .45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos=".62 .45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="cylinder" size=".17 .10" pos="0 -.73 -.10" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".008 .52 .40" pos="-.74 0 .36" material="guard" contype="0" conaffinity="0"/>
+    <geom type="box" size=".008 .52 .40" pos=".74 0 .36" material="guard" contype="0" conaffinity="0"/>
+    <body name="cell_focus" pos="0 -.03 .18"/>
+    <camera name="overview" mode="targetbodycom" target="cell_focus" pos="1.48 -1.78 1.28" fovy="43"/>
+    <camera name="process_view" mode="targetbodycom" target="cell_focus" pos=".85 -.95 .60" fovy="34"/>
+    <camera name="contact_view" mode="targetbodycom" target="connector" pos=".55 -.46 .31" fovy="28"/>
+    <body name="root_fixture" pos="-.45 0 .13">
+      <geom type="box" size=".04 .07 .018" pos="0 0 -.055" material="metal" contype="0" conaffinity="0"/>
+      <geom type="box" size=".025 .04 .04" material="metal" contype="0" conaffinity="0"/>
+    </body>
+    <body name="connector" pos=".32 0 .055">
+      <geom type="box" size=".09 .07 .05" material="connector" contype="0" conaffinity="0"/>
+      <geom type="box" size=".014 .058 .040" pos="-.091 0 0" material="connector_dark" contype="0" conaffinity="0"/>
+      <geom name="socket" type="cylinder" size=".018 .012" pos="-.107 0 0" quat=".7071 0 .7071 0" material="connector_dark" contype="0" conaffinity="0"/>
+      <geom type="cylinder" size=".006 .014" pos="-.108 -.032 .020" quat=".7071 0 .7071 0" rgba=".72 .78 .82 1" contype="0" conaffinity="0"/>
+      <geom type="cylinder" size=".006 .014" pos="-.108 .032 .020" quat=".7071 0 .7071 0" rgba=".72 .78 .82 1" contype="0" conaffinity="0"/>
+      <geom type="cylinder" size=".006 .014" pos="-.108 -.032 -.020" quat=".7071 0 .7071 0" rgba=".72 .78 .82 1" contype="0" conaffinity="0"/>
+      <geom type="cylinder" size=".006 .014" pos="-.108 .032 -.020" quat=".7071 0 .7071 0" rgba=".72 .78 .82 1" contype="0" conaffinity="0"/>
+      <geom type="box" size=".035 .025 .008" pos="0 0 .058" material="metal" contype="0" conaffinity="0"/>
+      <!-- Collision-enabled guide rails define a 20 x 18 mm mouth around the
+           12 x 12 mm terminal.  The surrounding connector shell remains
+           visual-only so the cavity is physically open. -->
+      <geom name="socket_guide_y_neg" type="box" size=".023 .004 .014" pos="-.097 -.014 0" material="metal" friction=".55 .02 .002" condim="4"/>
+      <geom name="socket_guide_y_pos" type="box" size=".023 .004 .014" pos="-.097 .014 0" material="metal" friction=".55 .02 .002" condim="4"/>
+      <geom name="socket_guide_z_neg" type="box" size=".023 .010 .004" pos="-.097 0 -.013" material="metal" friction=".55 .02 .002" condim="4"/>
+      <geom name="socket_guide_z_pos" type="box" size=".023 .010 .004" pos="-.097 0 .013" material="metal" friction=".55 .02 .002" condim="4"/>
+      <geom name="socket_backstop" type="box" size=".004 .010 .009" pos="-.070 0 0" material="connector_dark" friction=".65 .02 .002" condim="4"/>
+      <site name="insertion_goal" type="sphere" size=".012" pos="-.115 0 0" rgba=".2 .9 .45 .8"/>
+      <site name="seat_goal" type="sphere" size=".004" pos="-.082 0 0" rgba=".2 .9 .45 .45"/>
+    </body>
+    <body name="gripper" mocap="true" pos=".145 0 .055">
+      <geom type="box" size=".035 .025 .022" rgba="0 0 0 0" contype="0" conaffinity="0"/>
+    </body>
+    <body name="terminal_tool" pos=".145 0 .055">
+      <freejoint name="terminal_free"/>
+      <inertial pos=".015 0 0" mass=".25" diaginertia=".00010 .00018 .00018"/>
+      <geom name="terminal_contact" type="box" size=".025 .006 .006" pos=".025 0 0" material="metal" mass=".25" friction=".38 .015 .001" condim="4"/>
+      <geom type="box" size=".012 .010 .010" pos="-.010 0 0" material="connector" contype="0" conaffinity="0"/>
+      <site name="terminal_tip" type="sphere" size=".003" pos=".050 0 0" rgba="1 .55 .08 .9"/>
+    </body>
+    <composite type="cable" prefix="insert_" curve="s sin(s) 0" count="31 1 1" size=".65 .10 1" offset="-.45 0 .13" initial="none">
+      <plugin plugin="mujoco.elasticity.cable">
+        <config key="twist" value="2e5"/>
+        <config key="bend" value="8e4"/>
+        <config key="vmax" value=".08"/>
+      </plugin>
+      <joint kind="main" damping=".025"/>
+      <geom type="capsule" size=".006" material="wire" condim="3" friction=".08 .005 .001"/>
+    </composite>
+  </worldbody>
+  <equality>
+    <connect name="terminal_grasp" body1="insert_B_last" body2="gripper" anchor=".01 0 0"/>
+    <weld name="terminal_servo" body1="terminal_tool" body2="gripper" solref=".008 1" solimp=".92 .97 .0008"/>
+  </equality>
+  <contact>
+    <exclude body1="insert_B_last" body2="gripper"/>
+  </contact>
+</mujoco>

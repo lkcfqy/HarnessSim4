@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "renderer": "MuJoCo 3.12 offscreen EGL",
+  "resolution": [960, 540],
+  "views": ["overview", "process_view"],
+  "visual_twin_scope": {
+    "robot_motion": "damped-least-squares positional IK synchronized to task mocap targets",
+    "robot_collisions": false,
+    "robot_dynamics": false,
+    "benchmark_physics": "HarnessSim4 cable and fixture physics only",
+    "claim_boundary": "The detailed robots are kinematic visual twins, not torque-controlled robot simulations."
+  },
+  "asset_source": {
+    "repository": "https://github.com/google-deepmind/mujoco_menagerie",
+    "commit": "da76818e269b82289eba39808e2fb91d679d6994",
+    "retrieved": "2026-08-26",
+    "licenses": "See each retained third_party/mujoco_menagerie/<model>/LICENSE"
+  },
+  "tasks": {
+    "inspect": {
+      "robot": "Universal Robots UR5e",
+      "tool": "HarnessSim4 dual-lens inspection head"
+    },
+    "insert": {
+      "robot": "KUKA LBR iiwa 14",
+      "tool": "Robotiq 2F-85"
+    },
+    "route": {
+      "robot": "Universal Robots UR10e",
+      "tool": "Robotiq 2F-85"
+    },
+    "branch": {
+      "robot": "Dual Universal Robots UR10e",
+      "tool": "Dual Robotiq 2F-85"
+    }
+  }
+}

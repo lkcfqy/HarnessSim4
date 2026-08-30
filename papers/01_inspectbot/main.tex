@@ -1,0 +1,469 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{balance}
+\hypersetup{hidelinks}
+
+\definecolor{draftred}{RGB}{150,20,20}
+\newcommand{\draftwarning}{\textcolor{draftred}{DRAFT---NOT FOR SUBMISSION}}
+\newcommand{\MVTecSpatialAUROC}{TBD}
+\newcommand{\MVTecPixelAUROC}{TBD}
+\newcommand{\WireNNAUROC}{TBD}
+\newcommand{\WireNNRecall}{TBD}
+\newcommand{\WorstViewRecall}{TBD}
+\newcommand{\StressTopoBFour}{TBD}
+\newcommand{\DeployTopoBFour}{TBD}
+\newcommand{\DeployGeomBFour}{TBD}
+\newcommand{\DeployDeltaBFour}{TBD}
+\newcommand{\DeployDeltaBSix}{TBD}
+\newcommand{\DeployDeltaBEight}{TBD}
+\newcommand{\DeployDeltaBTen}{TBD}
+\newcommand{\DeployBFourHolm}{TBD}
+\newcommand{\MuJoCoRuns}{TBD}
+\newcommand{\MuJoCoFOVmm}{TBD}
+\newcommand{\MuJoCoIKmm}{TBD}
+\newcommand{\AuditChecks}{TBD}
+\IfFileExists{../../artifacts/papers/inspectbot/final/paper_assets/inspect_numbers.tex}
+  {\input{../../artifacts/papers/inspectbot/final/paper_assets/inspect_numbers.tex}}{}
+
+\title{Topology-Risk Active Inspection for Wire Harnesses:\\
+Public Cable Defects, Paired Budget Tests, and Executable Robot Scans}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\draftwarning
+\end{center}
+
+\begin{abstract}
+Robot inspection of branched wire harnesses couples anomaly detection with the
+choice of where to spend a limited scan budget. We present InspectBot, a hybrid
+benchmark grounded in two public real-image datasets and executable 3-D robot
+scans. A spatial Gaussian model trained only on normal MVTec cable images reaches
+\MVTecSpatialAUROC\% image and \MVTecPixelAUROC\% pixel AUROC. On independent
+stripped-wire data, a spatial nearest-neighbor reference reaches
+\WireNNAUROC\% AUROC but only \WireNNRecall\% recall at a normal-only threshold.
+Occlusion plus darkening reduces anomaly recall to \WorstViewRecall\%, exposing
+a perception floor that no scan policy repairs. Under a disjoint 2,000-scenario
+protocol, fixed topology-risk ordering improves criticality-weighted recall over
+geometry coverage by \DeployDeltaBFour, \DeployDeltaBSix, \DeployDeltaBEight,
+and \DeployDeltaBTen{} percentage points at budgets 4, 6, 8, and 10; all remain
+significant after a 30-test Holm correction. The advantage disappears at full
+coverage and reverses under naive revisits. Direct MuJoCo execution completes
+all \MuJoCoRuns{} runs with sub-\MuJoCoFOVmm{}-mm field-of-view and
+sub-\MuJoCoIKmm{}-mm visual-IK error. The evidence supports risk-aware budget
+allocation, not learned topology, hardware safety, or factory performance.
+\end{abstract}
+
+\noindent\textit{Note to Practitioners---}
+Wire-harness inspection stations often have less camera time than is needed to
+view every terminal, branch, label, and clip at equal quality. This paper tests
+a simple operational principle: spend the limited scan budget first at sites
+whose process role makes a missed defect costly, but stop trusting the planner
+when image quality is too poor. On public cable and stripped-wire images, the
+experiments show that adverse views can impose a perception floor that no view
+ordering policy repairs. Under cleaner views, topology-risk ordering improves
+criticality-weighted recall at partial coverage, but the advantage disappears
+at full coverage and reverses under poorly designed revisits. The current robot
+is a digital twin, so the reported rates are not factory escape rates. Before
+deployment, practitioners must calibrate the actual cameras and fixtures,
+measure cycle time, and validate the policy across suppliers, lighting and real
+automotive harness defects.
+
+\begin{IEEEkeywords}
+Active perception, anomaly detection, industrial inspection, robot vision,
+wire-harness assembly.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Wire-harness inspection is not uniform search.  Damage near a branch junction,
+high-current path, or safety-critical connector can carry greater engineering
+risk than an equally visible defect on a redundant segment.  At the same time,
+the camera and anomaly detector may be least reliable at occluded or reflective
+locations.  An inspection robot must therefore decide not merely whether an
+image is anomalous, but which site should be observed next and whether revisiting
+it is preferable to covering an unobserved site.
+
+Industrial anomaly detection has strong controlled benchmarks and capable
+one-class methods \cite{bergmann2019mvtec,defard2021padim,roth2022patchcore}.
+CableInspect-AD shows that expert cable anomalies remain difficult outside
+controlled factories \cite{arodi2024cableinspect}.  Wire-harness reviews
+similarly identify robustness, practical validation, and exploitation of
+intrinsic harness structure as open problems \cite{wang2024review}.  Existing
+evidence, however, rarely couples a real-image detector to paired resource-
+allocation tests and executable scan motions.  Merely rendering a robot beside
+a cable does not close that gap.
+
+InspectBot narrows the claim to a falsifiable question: given frozen detector
+scores and a fixed engineering-risk map, does topology-aware allocation recover
+more risk-weighted anomaly mass than non-topological policies at the same number
+of observations?  Its contributions are:
+
+\begin{enumerate}
+  \item two integrity-audited public-data experiments with normal-only fitting
+  and threshold calibration, including an independent stripped-wire refit;
+  \item a 600-row real-image score cache under four deterministic appearances,
+  exposing both a useful clean-view regime and a severe adverse-view failure;
+  \item paired stress and deployment protocols covering 126,000 active-policy
+  rows, exact frozen seeds, bootstrap intervals, multiplicity-corrected tests,
+  an explicit shuffled-risk control, and a corrected offline oracle;
+  \item a direct MuJoCo execution audit that preserves all allocation outcomes
+  while testing bounded 3-D motion to the 12 inspection sites; and
+  \item a machine-audited claim boundary separating real images, synthetic
+  appearance transforms, simulated robot motion, and absent hardware evidence.
+\end{enumerate}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.96\textwidth]{%
+    ../../artifacts/papers/inspectbot/final/paper_assets/system_overview.pdf}
+  \caption{InspectBot separates allocation evidence from execution evidence.
+  Left: the UR5e visual twin executes bounded scanner motions in MuJoCo.  Right:
+  12 frozen inspection sites and their engineering-risk weights; the displaced
+  dotted node is a process checkpoint physically colocated with the junction.
+  Detector scores come from held-out real images, not from the rendered camera.}
+  \label{fig:overview}
+\end{figure*}
+
+\section{Related Work}
+
+\paragraph{Industrial anomaly detection.}
+MVTec AD established a controlled multi-category one-class benchmark
+\cite{bergmann2019mvtec}.  PaDiM fits a Gaussian distribution at each pretrained
+feature location \cite{defard2021padim}; PatchCore instead retains a coreset of
+nominal patch features \cite{roth2022patchcore}.  We use these as transparent
+method families, not as a novelty claim.  Our compact spatial Gaussian keeps 64
+deterministic channels from a frozen ResNet-18, while the independent validation
+also includes a position-wise nearest-neighbor reference.
+
+CableInspect-AD contains expert-annotated high-resolution power-line cable images
+with multiple real-world anomaly types \cite{arodi2024cableinspect}.  We audited
+its official code but could not obtain the dataset from its official endpoints
+without an access request; consequently no CableInspect number appears in our
+tables.  The FAU/FAPS Stripped Wire Dataset contains good, cut-strand, and
+pulled-strand images \cite{scheck2025stripped}.  Its associated PB-IAD study uses
+semantic foundation-model prompts and a PatchCore comparison
+\cite{hofmann2025pbiad}.  That comparison selects a threshold using labeled test
+data, whereas every InspectBot threshold is selected from normal calibration
+images only; thresholded F1 values are therefore not directly comparable.
+
+\paragraph{Wire-harness perception and active inspection.}
+Multi-branch 3-D vision has been validated in a real dual-robot assembly setting
+\cite{nguyen2024branches}, which is stronger hardware evidence than ours.  We
+address a different decision: distributing observations after the sites and a
+risk map are known.  This follows the active-perception view that sensing actions
+should be selected jointly with task goals \cite{bajcsy1988active}.  The risk map
+here is engineering input, not learned from labels.  A shuffled-risk policy is
+therefore essential: it tests whether improvements require the correct
+site--risk binding rather than merely a nonuniform scan order.
+
+\section{Public-Data Perception}
+
+\subsection{Data integrity and splits}
+
+The MVTec cable audit fixes the transport mirror at commit
+\texttt{c75b39616f84} and the extracted tree at SHA-256 prefix
+\texttt{5ecf3b6b9fee}.  It contains 224 normal training images, 58 normal test
+images, 92 anomalous test images across eight defect types, and 92 masks.
+A seed-20260827 permutation assigns 180 normals to fitting and 44 to threshold
+calibration.  The public test set is untouched until evaluation.
+
+The Stripped Wire archive is fixed to DOI
+\href{https://doi.org/10.5281/zenodo.16686806}{10.5281/zenodo.16686806}, version
+v2, MD5 \texttt{9e1944f1b7c9bc9e7db433f7bdcf2694}.  Its 200 released
+PatchCore normals are split 160/40 for fitting/calibration; all 133 good, 68
+cut-strand, and 99 pulled-strand test images remain held out.  Exact-file hashing
+finds no train--test duplicate.  Three optional VLM references are excluded.
+Aspect ratio is preserved and padded to $224\!\times\!224$, avoiding a
+test-label-dependent crop.
+
+\subsection{Detector and baselines}
+
+Frozen ImageNet ResNet-18 features from layers 1--3 are aligned to a
+$28\!\times\!28$ grid.  A seed-fixed subset of 64 channels forms feature
+$x_{ijp}$ for normal image $j$ at spatial position $p$.  The spatial Gaussian
+score is
+\begin{equation}
+ a_p(x)=\sqrt{(x_p-\mu_p)^\top(\Sigma_p+10^{-2}I)^{-1}(x_p-\mu_p)},
+\end{equation}
+and the image score averages the top 1\% of spatial values.  The strong spatial
+nearest-neighbor reference replaces the Gaussian distance with the closest
+normal feature at the same position.  RGB statistics and globally pooled
+ResNet features, each scored with Ledoit--Wolf Mahalanobis distance, are weaker
+controls.  Each method's threshold is its own 99th percentile on normal
+calibration scores.  No anomalous image selects features, preprocessing,
+thresholds, or models.
+
+\begin{table}[t]
+  \centering
+  \caption{MVTec cable test results (58 normal/92 anomaly).  Values are percent;
+  the decision threshold uses 44 normal calibration images only.}
+  \label{tab:mvtec}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/inspectbot/final/paper_assets/mvtec_perception_table.tex}}
+\end{table}
+
+\begin{table}[t]
+  \centering
+  \caption{Independent Stripped Wire refit (133 normal/167 anomaly).  Spatial
+  NN is an exploratory strong reference, not the prespecified candidate.}
+  \label{tab:wire}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/inspectbot/final/paper_assets/wire_perception_table.tex}}
+\end{table}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{%
+    ../../artifacts/papers/inspectbot/final/paper_assets/perception_roc.pdf}
+  \caption{Image-level ROC curves recomputed from frozen per-image CSV files.
+  MVTec favors the spatial Gaussian model; the independent wire-end task favors
+  the spatial nearest-neighbor reference.}
+  \label{fig:roc}
+\end{figure*}
+
+\subsection{Perception results}
+
+On MVTec cable, the spatial Gaussian reaches \MVTecSpatialAUROC\% image AUROC
+(stratified image-bootstrap 95\% CI 87.3--96.1) and 94.7\% AUPR.  Its
+normal-calibrated operating point gives 65.2\% recall, 95.2\% precision, and
+5.2\% false-positive rate.  Pixel AUROC is \MVTecPixelAUROC\%, but pixel AUPR is
+48.2\% and F1 is 52.5\%; localization is useful but far from solved.
+
+On Stripped Wire, spatial nearest neighbor is best at \WireNNAUROC\% AUROC
+(76.5--86.1) and 83.9\% AUPR.  Spatial Gaussian reaches 78.3\% AUROC, exceeding
+RGB statistics by 10.3 points (paired bootstrap CI 4.7--16.0) and global
+features by 4.8 points (0.2--9.4), but it is 3.2 points below spatial NN
+($-5.4$ to $-1.1$).  The strict spatial-NN threshold yields only
+\WireNNRecall\% recall.  Its per-defect AUROC is 71.1\% on cut strands and
+88.6\% on pulled strands, exposing the harder failure mode.  We therefore do
+not claim method superiority or production readiness.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{%
+    ../../artifacts/papers/inspectbot/final/paper_assets/qualitative_anomalies.pdf}
+  \caption{Deterministic qualitative audit.  The three largest MVTec defect
+  classes by test count and both Stripped Wire defect classes are shown; within
+  each class the image nearest its median anomaly score is selected.  Per-image
+  robust color scaling aids localization display but is not used for decisions.
+  Boundary responses on wire ends reveal a concrete localization weakness.}
+  \label{fig:qualitative}
+\end{figure*}
+
+\section{Hybrid Active Inspection}
+
+\subsection{Real-image score bridge}
+
+Every held-out MVTec image is scored under four deterministic appearances:
+clean; dark plus blur; rotation plus contrast; and deterministic occlusion plus
+darkening.  Each appearance $v$ is independently calibrated on the same 44
+normal images.  We store
+\begin{equation}
+ q_{iv}=\frac{s_{iv}-\tau_v}{1.4826\,\mathrm{MAD}_v},
+\end{equation}
+where $\tau_v$ is the 99th-percentile normal threshold.  A site's prediction is
+the sign of the mean of all observed $q_{iv}$.  These transforms are controlled
+stress tests, not physical views or camera trajectories.
+
+\begin{table}[t]
+  \centering
+  \caption{Frozen detector robustness by appearance (150 held-out images).
+  Each threshold is calibrated on transformed normal training images.}
+  \label{tab:views}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/inspectbot/final/paper_assets/view_robustness_table.tex}}
+\end{table}
+
+The clean and dark-blur appearances retain 92.2\% and 92.6\% AUROC.  Rotation
+plus contrast falls to 62.9\%; occlusion plus darkening falls to 55.2\% AUROC
+and \WorstViewRecall\% recall.  This observation motivates two frozen protocols
+rather than deletion of the failed setting.
+
+\subsection{Sites, outcome, and policies}
+
+Each paired scenario assigns a held-out real image to each of 12 sites on a
+branched topology, with anomaly probability 0.30 conditioned on at least one
+normal and one anomalous site.  Defect type is sampled uniformly before an
+image is selected within type.  Site risk $r_i$ and defect-severity coefficient
+$d_i$ are fixed before the run.  For true anomaly indicator $y_i$ and final
+prediction $\hat y_i$, the primary metric is
+\begin{equation}
+ \mathrm{CWR}=\frac{\sum_i r_i d_i y_i\hat y_i}
+                    {\sum_i r_i d_i y_i}.
+\end{equation}
+This metric intentionally values critical sites.  Ordinary recall, precision,
+F1, false-positive rate, coverage, revisits, travel, and complete critical
+success are secondary outcomes.
+
+The seven policies are raster order, random scanning, nearest-unvisited geometry
+coverage, coverage-first uncertainty revisit, topology risk plus uncertainty,
+a shuffled-risk negative control, and an offline label/score-aware oracle.  The
+topology policy selects unvisited site $i$ approximately by
+$r_i/(1+\mathrm{travel}_i)$ and, after coverage, combines risk with score
+uncertainty.  It is a deterministic engineering heuristic, not a learned
+planner.  The oracle solves an exact multiple-choice knapsack over per-site view
+prefixes and is descriptive only.
+
+\subsection{Frozen paired protocols and statistics}
+
+Stress-v1 uses 1,000 scenarios (seeds 77,000,000--77,000,999), budgets
+$\{4,6,8,10,12,16\}$, and the appearance order adverse-dark, dark-blur,
+rotate-contrast, clean.  Deployment-v2 was written after retaining that result;
+it changes only to clean-first order and uses 2,000 disjoint scenarios (seeds
+78,000,000--78,001,999).  Detector scores, topology, risks, severities, policy
+equations, thresholds, budgets, and tests remain fixed.
+
+At each budget we compare topology risk with five non-oracle baselines using
+paired, one-sided Wilcoxon signed-rank tests on CWR.  All 30 $p$-values are Holm
+adjusted together.  Scenario-paired bootstrap intervals use 10,000 resamples.
+Budgets 4--10 are confirmatory under-coverage regimes; budget 12 is a
+prespecified coverage equality check and budget 16 is exploratory.  An initial
+greedy implementation mislabeled as ``oracle'' was not a true upper bound.  We
+retain that run, correct only the descriptive oracle, and audit that all 72,000
+non-oracle rows and the complete paired-comparison CSV remain unchanged.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{%
+    ../../artifacts/papers/inspectbot/final/paper_assets/active_budget.pdf}
+  \caption{Criticality-weighted recall versus scan budget on shared 0--75\%
+  axes.  Stress-v1 is a retained negative result: adverse-first observations
+  impose a perception floor.  Clean-first deployment-v2 reveals a topology-risk
+  allocation advantage under partial coverage, followed by equality and a
+  late-revisit reversal.  Bands are scenario-bootstrap 95\% intervals.}
+  \label{fig:budget}
+\end{figure*}
+
+\begin{table*}[t]
+  \centering
+  \caption{Deployment-v2 criticality-weighted recall in percent.  Differences
+  are paired topology minus geometry.  Holm $p$ values belong to the conservative
+  family of all 30 topology-versus-baseline comparisons; budget 16 used a
+  one-sided superiority alternative and is exploratory.}
+  \label{tab:active}
+  \resizebox{0.82\textwidth}{!}{%
+    \input{../../artifacts/papers/inspectbot/final/paper_assets/active_budget_table.tex}}
+\end{table*}
+
+\section{Active-Inspection Results}
+
+\paragraph{The adverse-first protocol fails informatively.}
+Topology risk reaches only \StressTopoBFour\% CWR at budget 4, and no
+non-oracle policy shows a stable advantage through budget 12: the first site
+observation has only \WorstViewRecall\% anomaly recall.  Random revisits
+occasionally encounter a less damaging transform earlier.  Allocation cannot
+compensate for an arbitrarily poor sensing regime.
+
+\paragraph{Topology matters under clean partial coverage.}
+In deployment-v2, topology risk reaches \DeployTopoBFour\% CWR at budget 4,
+versus \DeployGeomBFour\% for geometry, a \DeployDeltaBFour-point paired gain
+(95\% CI 8.0--10.9, Holm-adjusted $p$ value \DeployBFourHolm).  The gains at budgets 6, 8, and
+10 are \DeployDeltaBSix, \DeployDeltaBEight, and \DeployDeltaBTen{} points.  At
+all four confirmatory budgets topology also exceeds raster, random, uncertainty,
+and shuffled-risk after the same 30-test correction.  The shuffled control
+supports the interpretation that correct site--risk binding, rather than an
+arbitrary nonuniform order, drives the primary metric.
+
+\paragraph{Coverage and revisits bound the claim.}
+At budget 12, all coverage-first policies inspect every site once and tie at
+64.8\% CWR.  At budget 16, topology risk falls to 61.2\%, below geometry's
+63.6\% and uncertainty's 62.6\%.  Averaging later degraded-view scores can turn
+a previously detected anomaly negative; risk-weighted revisiting then harms the
+same high-value sites it tries to protect.  The corrected offline oracle uses an
+average of 2.64 scans and reaches 66.5\% CWR at budget 4, 68.2\% at 6, and
+68.4\% from budget 8 onward.  The gap suggests a future learned stopping rule,
+but oracle knowledge cannot be deployed.
+
+\section{Direct MuJoCo Audit}
+
+The direct audit uses seeds 78,000,100--78,000,119, four executable policies,
+and budgets 4, 8, 12, and 16.  At each decision, the current 3-D inspection-site
+pose is read from MuJoCo \cite{todorov2012mujoco}.  The scanner moves in
+increments no larger than 25 mm, with four physics steps per increment, and a
+scan is accepted only within 3 mm of the site.  A detailed UR5e plus dual-lens
+head follows the task-space scanner through inverse kinematics.  The arm mesh is
+collision-disabled so it cannot silently perturb the cable benchmark.
+
+\begin{table}[t]
+  \centering
+  \caption{Direct execution diagnostics pooled over four budgets per policy.
+  Travel is world-space scanner-path length.}
+  \label{tab:mujoco}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/inspectbot/final/paper_assets/mujoco_execution_table.tex}}
+\end{table}
+
+All \MuJoCoRuns{} runs reach every prescribed site.  Maximum accepted
+field-of-view error is \MuJoCoFOVmm{} mm and maximum visual IK error is
+\MuJoCoIKmm{} mm; every simulation state remains finite.  For identical seed,
+policy, and budget, 14 shared perception/allocation fields exactly match
+deployment-v2.  This is deliberate: the new evidence is executable 3-D motion,
+not a second performance sample.  The detector scores are replayed from public
+images rather than computed from MuJoCo renders, and neither collision forces
+nor real camera calibration is validated.
+
+\section{Limitations}
+
+The primary metric multiplies an engineered risk map by defect severity, and
+the topology policy receives that same risk map.  Paired geometry, uncertainty,
+random, raster, and shuffled-risk controls establish resource-allocation value,
+but they do not show that risk was learned or optimally chosen.  An actual
+factory must derive weights through traceable hazard analysis and test their
+sensitivity.
+
+The active benchmark repeatedly samples a finite 150-image MVTec test pool.
+Intervals quantify scenario resampling, not unseen cables, suppliers, cameras,
+or factories.  Deterministic transforms are appearance perturbations rather
+than robot viewpoints; site localization, autofocus, exposure control, depth,
+and temporal registration are absent.  Stripped Wire is an independent refit,
+not zero-shot domain transfer, and both public datasets show controlled cable
+cross-sections or single wire ends rather than a complete automotive harness.
+
+Only one frozen backbone/channel seed is evaluated.  The study does not claim a
+state-of-the-art anomaly detector, an optimal active policy, or superiority over
+CableInspect-AD and PB-IAD.  Deployment-v2 was designed after observing the
+stress-v1 perception floor, although its new protocol and disjoint seeds were
+frozen before execution.  Reporting both versions is mandatory.
+
+Finally, MuJoCo validates bounded task-space reachability with a visual IK twin.
+It does not validate joint control, collision avoidance, cable--robot contact,
+force limits, camera measurements, timing, safety interlocks, maintenance, or
+production economics.  Hardware experiments and a prospective cross-factory
+protocol are required before any deployment claim.
+
+\section{Ethics and Safety}
+
+The used datasets contain industrial objects and no personal data.  MVTec cable
+is CC BY-NC-SA 4.0; Stripped Wire v2 is CC BY 4.0.  A release should distribute
+download instructions and hashes rather than silently relicense source images.
+Automated inspection may reduce repetitive visual work and improve traceability,
+but it may also displace tasks or create automation bias.  A missed electrical
+defect can be safety-critical.  The present detector and simulator must not be
+used to waive human inspection or safety validation.
+
+\section{Reproducibility}
+
+The research package includes source URLs, transport revision, archive and tree
+hashes, fit/calibration manifests, checkpoints, all per-image predictions and
+maps, the 600-row view cache, per-scenario active CSVs, the retained oracle bug,
+frozen protocols, MJCF, per-run motion traces, plot code, and a one-command paper
+build.  An independent audit recomputes public counts, file hashes, AUROC/AUPR,
+threshold outcomes, every active aggregate, oracle upper-bound behavior, all
+non-oracle correction rows, MuJoCo tolerances, and cross-system outcome identity.
+All \AuditChecks{} checks must pass before the release PDF is copied.
+
+\balance
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "robot": "insertbot",
+  "protocol_version": "1.0-preregistration-template",
+  "claim_boundary": "Force-calibrated real-robot connector insertion; no production reliability or ROI claim.",
+  "primary_policy": "contact_belief",
+  "comparators": [
+    "guarded_admittance",
+    "direct_insertion"
+  ],
+  "required_conditions": [
+    "nominal",
+    "pose_offset",
+    "cable_drag"
+  ],
+  "minimum_complete_pairs_per_comparison": 100,
+  "minimum_trials_per_policy": 100,
+  "required_columns": [
+    "trial_id",
+    "pair_id",
+    "timestamp_utc",
+    "specimen_id",
+    "setup_id",
+    "connector_family",
+    "condition",
+    "policy",
+    "success",
+    "locked",
+    "pull_test_pass",
+    "damage",
+    "safety_stop",
+    "operator_intervention",
+    "peak_force_n",
+    "peak_torque_nm",
+    "cycle_time_s",
+    "retries",
+    "insertion_depth_mm",
+    "failure_type",
+    "notes"
+  ],
+  "optional_value_columns": [
+    "notes"
+  ],
+  "binary_columns": [
+    "success",
+    "locked",
+    "pull_test_pass",
+    "damage",
+    "safety_stop",
+    "operator_intervention"
+  ],
+  "numeric_columns": [
+    "peak_force_n",
+    "peak_torque_nm",
+    "cycle_time_s",
+    "retries",
+    "insertion_depth_mm"
+  ],
+  "nonnegative_columns": [
+    "peak_force_n",
+    "peak_torque_nm",
+    "cycle_time_s",
+    "retries",
+    "insertion_depth_mm"
+  ],
+  "minimum_distinct": {
+    "specimen_id": 30,
+    "setup_id": 2,
+    "connector_family": 3
+  },
+  "success_rules": {
+    "must_be_one": [
+      "locked",
+      "pull_test_pass"
+    ],
+    "must_be_zero": [
+      "damage",
+      "safety_stop",
+      "operator_intervention"
+    ]
+  },
+  "required_provenance_fields": [
+    "state",
+    "study_id",
+    "site_id",
+    "protocol_sha256",
+    "protocol_frozen_at_utc",
+    "collection_started_at_utc",
+    "collection_completed_at_utc",
+    "operator_ids",
+    "independent_reviewer_id",
+    "robot_serial",
+    "software_revision"
+  ],
+  "required_calibration_kinds": [
+    "force_torque",
+    "hand_eye",
+    "robot_tcp"
+  ],
+  "minimum_media_items": 12,
+  "required_media_kinds": [
+    "force_trace",
+    "robot_overview_video",
+    "pull_test_video"
+  ],
+  "reported_metrics": [
+    "peak_force_n",
+    "peak_torque_nm",
+    "cycle_time_s",
+    "retries",
+    "insertion_depth_mm"
+  ]
+}

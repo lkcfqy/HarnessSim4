@@ -1,0 +1,9 @@
+{
+  "robot": "RouteBot",
+  "task": "cable_routing",
+  "state": ["cable_graph", "ordered_clips", "semantic_particle_ids", "grasp_state"],
+  "action": ["target_x", "target_y", "grip"],
+  "primary_metrics": ["clip_coverage", "topology_accuracy", "wrong_latches", "crossings"],
+  "success": "all ordered clips contain the correct semantic cable particle"
+}
+

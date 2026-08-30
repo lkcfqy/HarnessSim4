@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "robot": "inspectbot",
+  "protocol_version": "1.0-preregistration-template",
+  "claim_boundary": "Calibrated active inspection on real harness specimens; no production escape-rate claim.",
+  "primary_policy": "topology_risk",
+  "comparators": [
+    "geometry",
+    "random_scan"
+  ],
+  "required_conditions": [
+    "clean",
+    "glare",
+    "dark",
+    "occlusion"
+  ],
+  "minimum_complete_pairs_per_comparison": 100,
+  "minimum_trials_per_policy": 100,
+  "required_columns": [
+    "trial_id",
+    "pair_id",
+    "timestamp_utc",
+    "specimen_id",
+    "setup_id",
+    "supplier_id",
+    "camera_id",
+    "defect_family",
+    "condition",
+    "policy",
+    "success",
+    "inspection_correct",
+    "critical_defect",
+    "detected",
+    "false_positive",
+    "safety_stop",
+    "operator_intervention",
+    "views_used",
+    "cycle_time_s",
+    "localization_error_mm",
+    "failure_type",
+    "notes"
+  ],
+  "optional_value_columns": [
+    "notes"
+  ],
+  "binary_columns": [
+    "success",
+    "inspection_correct",
+    "critical_defect",
+    "detected",
+    "false_positive",
+    "safety_stop",
+    "operator_intervention"
+  ],
+  "numeric_columns": [
+    "views_used",
+    "cycle_time_s",
+    "localization_error_mm"
+  ],
+  "nonnegative_columns": [
+    "views_used",
+    "cycle_time_s",
+    "localization_error_mm"
+  ],
+  "minimum_distinct": {
+    "specimen_id": 30,
+    "supplier_id": 2,
+    "camera_id": 2,
+    "defect_family": 5
+  },
+  "success_rules": {
+    "must_be_one": [
+      "inspection_correct"
+    ],
+    "must_be_zero": [
+      "safety_stop",
+      "operator_intervention"
+    ]
+  },
+  "required_provenance_fields": [
+    "state",
+    "study_id",
+    "site_id",
+    "protocol_sha256",
+    "protocol_frozen_at_utc",
+    "collection_started_at_utc",
+    "collection_completed_at_utc",
+    "operator_ids",
+    "independent_reviewer_id",
+    "robot_serial",
+    "software_revision"
+  ],
+  "required_calibration_kinds": [
+    "camera_intrinsic",
+    "hand_eye",
+    "robot_tcp",
+    "illumination"
+  ],
+  "minimum_media_items": 12,
+  "required_media_kinds": [
+    "raw_camera_frame",
+    "robot_overview_video",
+    "calibration_record"
+  ],
+  "reported_metrics": [
+    "views_used",
+    "cycle_time_s",
+    "localization_error_mm"
+  ]
+}

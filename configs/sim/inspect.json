@@ -1,0 +1,9 @@
+{
+  "robot": "InspectBot",
+  "task": "active_inspection",
+  "state": ["cable_graph", "critical_sites", "camera_pose", "inspection_history"],
+  "action": ["camera_x", "camera_y", "trigger"],
+  "primary_metrics": ["coverage", "precision", "recall", "f1"],
+  "success": "coverage=1, recall=1, precision>=0.8"
+}
+

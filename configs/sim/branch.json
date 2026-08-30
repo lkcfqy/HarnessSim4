@@ -1,0 +1,9 @@
+{
+  "robot": "BranchBot",
+  "task": "branched_harness",
+  "state": ["branched_cable_graph", "semantic_endpoints", "dual_arm_poses", "targets"],
+  "action": ["arm_a_x", "arm_a_y", "grip_a", "arm_b_x", "arm_b_y", "grip_b"],
+  "primary_metrics": ["mean_endpoint_error", "crossings", "topology_preserved"],
+  "success": "semantic endpoints reach their targets with zero crossings for four steps"
+}
+

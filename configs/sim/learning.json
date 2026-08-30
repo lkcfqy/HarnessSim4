@@ -1,0 +1,50 @@
+{
+  "method": "TopoHarnessNet",
+  "tasks": ["inspect", "insert", "route", "branch"],
+  "dataset": {
+    "train_episodes_per_task": 24,
+    "validation_episodes_per_task": 6,
+    "test_episodes_per_task": 12,
+    "difficulties": [0.2, 0.5, 0.8],
+    "record_every": 2,
+    "split_unit": "whole_episode_seed",
+    "branch_semantic_counterfactual_balanced": true
+  },
+  "model": {
+    "hidden_dim": 64,
+    "message_passing_layers": 3,
+    "dropout": 0.05,
+    "shared_encoder": true,
+    "task_heads": 4,
+    "graph_pointer_heads": 2,
+    "typed_candidate_decoder": true,
+    "observable_action_grounding": true,
+    "parameters": 120217
+  },
+  "training": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "epochs": 120,
+    "early_stopping_patience": 25,
+    "seed": 202609,
+    "task_balanced_sampler": true,
+    "binary_threshold_source": "validation_split_only"
+  },
+  "ablation": {
+    "geometry_same_parameter_count": true,
+    "removed": [
+      "physical_adjacency",
+      "semantic_association_edges",
+      "endpoint_and_junction_roles",
+      "branch_identity",
+      "process_order"
+    ]
+  },
+  "development_evaluation": {
+    "closed_loop_episodes_per_task_difficulty": 5,
+    "counterfactual_physical_seeds_per_difficulty": 10,
+    "paper_target_episodes_per_cell": 100
+  }
+}

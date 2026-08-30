@@ -1,0 +1,15 @@
+{
+  "project": "HarnessBench-Insert",
+  "seed": 202609,
+  "public_dataset": "lerobot/aloha_sim_insertion_human",
+  "public_data_dir": "data/public/aloha_sim_insertion_human",
+  "artifact_dir": "artifacts/aloha_ridge_v0",
+  "train_episode_fraction": 0.8,
+  "ridge_alpha": 0.01,
+  "synthetic": {
+    "output_dir": "data/synthetic/harness_insert_v0",
+    "episodes": 12,
+    "frames_per_episode": 40,
+    "image_size": 256
+  }
+}

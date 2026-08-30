@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.venv-wsl/
+.venv-*/
+venv/
+node_modules/
+
+# Downloaded/generated data and trained artifacts
+data/public/
+data/synthetic/
+artifacts/
+tmp/
+
+# Local publication staging and downloaded build tools
+submissions/
+third_party/tectonic-*/
+
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,9 @@
+{
+  "robot": "InsertBot",
+  "task": "terminal_insertion",
+  "state": ["cable_graph", "terminal_pose", "socket_pose", "arm_pose"],
+  "action": ["target_x", "target_y", "terminal_angle", "grip"],
+  "primary_metrics": ["terminal_error", "angle_error_rad", "peak_force_proxy", "locked"],
+  "success": "stable pose/angle tolerance and lock state for four steps"
+}
+

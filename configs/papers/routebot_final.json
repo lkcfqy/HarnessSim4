@@ -1,0 +1,102 @@
+{
+  "protocol": "RouteBot relational segment-to-clip counterfactual",
+  "protocol_version": "1.0",
+  "frozen_date": "2026-08-26",
+  "claim_scope": "paired 2-D PBD semantic-routing evidence; not real-production performance",
+  "primary_success": "all three assigned particles are latched to their ordered clips and the endpoint is placed",
+  "secondary_strict_success": "primary success and zero cable crossings in the 2-D projection",
+  "data": {
+    "path": "artifacts/papers/routebot/final/data/route_paired_success_432.npz",
+    "sha256": "dac7dd2b8ac92de7b91b9717514afc073ae23ac14c309d763a80bd73eff8e9c3",
+    "record_every": 2,
+    "episodes": {
+      "train": 270,
+      "validation": 81,
+      "test": 81
+    },
+    "physical_scenes": {
+      "train": 30,
+      "validation": 9,
+      "test": 9
+    },
+    "data_size_ablations": {
+      "20_percent": 54,
+      "50_percent": 135,
+      "100_percent": 270
+    },
+    "paired_design": "each physical scene is repeated under all nine semantic assignments",
+    "leakage_rule": "episode and physical seeds are disjoint across splits"
+  },
+  "assignments": [
+    [5, 13, 21],
+    [7, 15, 23],
+    [9, 17, 25],
+    [5, 15, 25],
+    [7, 17, 21],
+    [9, 13, 23],
+    [5, 17, 23],
+    [7, 13, 25],
+    [9, 15, 21]
+  ],
+  "assignment_audit": {
+    "path": "artifacts/papers/routebot/assignment_audit_semantic_final/route_assignment_audit.json",
+    "physical_seeds_per_difficulty": 10,
+    "base_seed": 60530000,
+    "episodes": 270,
+    "minimum_cell_semantic_success": 1.0
+  },
+  "training": {
+    "graph_seed": 202611,
+    "act_seed": 202612,
+    "graph": {
+      "epochs": 150,
+      "batch_size": 512,
+      "learning_rate": 0.0005,
+      "weight_decay": 0.0001,
+      "hidden_dim": 64,
+      "layers": 3,
+      "patience": 25,
+      "equal_parameter_ablations": [
+        "geometry/no adjacency and no identity features",
+        "physical adjacency only",
+        "semantic adjacency only",
+        "combined adjacency without endpoint/order/semantic unary features"
+      ]
+    },
+    "act": {
+      "epochs": 120,
+      "batch_size": 256,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "hidden_dim": 48,
+      "heads": 4,
+      "layers": 1,
+      "chunk_size": 8,
+      "latent_dim": 8,
+      "kl_weight": 0.1,
+      "pointer_loss_weight": 1.0,
+      "patience": 20,
+      "control_stride": 2
+    }
+  },
+  "main_evaluation": {
+    "difficulties": [0.2, 0.5, 0.8],
+    "episodes_per_difficulty": 100,
+    "base_seed": 61000000,
+    "paired_policies": true,
+    "workers": 8
+  },
+  "counterfactual_evaluation": {
+    "difficulties": [0.2, 0.5, 0.8],
+    "physical_seeds_per_assignment_difficulty": 100,
+    "base_seed": 62000000,
+    "paired_physics": true,
+    "workers": 8
+  },
+  "statistics": {
+    "binary_interval": "95% Wilson",
+    "paired_test": "two-sided exact McNemar",
+    "effect_size": "matched odds ratio with 0.5 continuity correction",
+    "failure_taxonomy": "mutually exclusive"
+  }
+}

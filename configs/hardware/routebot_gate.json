@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "robot": "routebot",
+  "protocol_version": "1.0-preregistration-template",
+  "claim_boundary": "Force-aware semantic clip routing on real cable specimens; no production takt-time claim.",
+  "primary_policy": "topoharness",
+  "comparators": [
+    "act_relpool",
+    "geometry"
+  ],
+  "required_conditions": [
+    "nominal",
+    "obstacle_shift",
+    "unseen_layout"
+  ],
+  "minimum_complete_pairs_per_comparison": 100,
+  "minimum_trials_per_policy": 100,
+  "required_columns": [
+    "trial_id",
+    "pair_id",
+    "timestamp_utc",
+    "specimen_id",
+    "setup_id",
+    "layout_family",
+    "cable_sku",
+    "condition",
+    "policy",
+    "success",
+    "order_correct",
+    "all_clips_seated",
+    "collision",
+    "safety_stop",
+    "operator_intervention",
+    "clips_seated",
+    "clips_total",
+    "cycle_time_s",
+    "peak_force_n",
+    "maximum_strain_pct",
+    "failure_type",
+    "notes"
+  ],
+  "optional_value_columns": [
+    "notes"
+  ],
+  "binary_columns": [
+    "success",
+    "order_correct",
+    "all_clips_seated",
+    "collision",
+    "safety_stop",
+    "operator_intervention"
+  ],
+  "numeric_columns": [
+    "clips_seated",
+    "clips_total",
+    "cycle_time_s",
+    "peak_force_n",
+    "maximum_strain_pct"
+  ],
+  "nonnegative_columns": [
+    "clips_seated",
+    "clips_total",
+    "cycle_time_s",
+    "peak_force_n",
+    "maximum_strain_pct"
+  ],
+  "minimum_distinct": {
+    "specimen_id": 20,
+    "layout_family": 3,
+    "cable_sku": 2
+  },
+  "success_rules": {
+    "must_be_one": [
+      "order_correct",
+      "all_clips_seated"
+    ],
+    "must_be_zero": [
+      "collision",
+      "safety_stop",
+      "operator_intervention"
+    ]
+  },
+  "required_provenance_fields": [
+    "state",
+    "study_id",
+    "site_id",
+    "protocol_sha256",
+    "protocol_frozen_at_utc",
+    "collection_started_at_utc",
+    "collection_completed_at_utc",
+    "operator_ids",
+    "independent_reviewer_id",
+    "robot_serial",
+    "software_revision"
+  ],
+  "required_calibration_kinds": [
+    "force_torque",
+    "hand_eye",
+    "robot_tcp"
+  ],
+  "minimum_media_items": 12,
+  "required_media_kinds": [
+    "force_trace",
+    "robot_overview_video",
+    "clip_closeup_video"
+  ],
+  "reported_metrics": [
+    "clips_seated",
+    "cycle_time_s",
+    "peak_force_n",
+    "maximum_strain_pct"
+  ]
+}

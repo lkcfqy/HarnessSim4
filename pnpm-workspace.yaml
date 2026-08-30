@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - hyparquet@1.29.2

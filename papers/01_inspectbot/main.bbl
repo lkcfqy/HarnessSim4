@@ -1,0 +1,63 @@
+\begin{thebibliography}{10}
+
+\bibitem{arodi2024cableinspect}
+Akshatha Arodi, Margaux Luck, Jean-Luc Bedwani, Aldo Zaimi, Ge~Li, Nicolas
+  Pouliot, Julien Beaudry, and Ga{\'e}tan~Marceau Caron.
+\newblock {CableInspect-AD}: An expert-annotated anomaly detection dataset.
+\newblock In {\em Advances in Neural Information Processing Systems, Datasets
+  and Benchmarks Track}, volume~37, 2024.
+
+\bibitem{bajcsy1988active}
+Ruzena Bajcsy.
+\newblock Active perception.
+\newblock {\em Proceedings of the IEEE}, 76(8):996--1005, 1988.
+
+\bibitem{bergmann2019mvtec}
+Paul Bergmann, Michael Fauser, David Sattlegger, and Carsten Steger.
+\newblock {MVTec AD}---a comprehensive real-world dataset for unsupervised
+  anomaly detection.
+\newblock In {\em IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition}, pages 9592--9600, 2019.
+
+\bibitem{defard2021padim}
+Thomas Defard, Aleksandr Setkov, Angelique Loesch, and Romaric Audigier.
+\newblock {PaDiM}: A patch distribution modeling framework for anomaly
+  detection and localization.
+\newblock In {\em International Conference on Pattern Recognition Workshops},
+  pages 475--489, 2021.
+
+\bibitem{hofmann2025pbiad}
+Bernd Hofmann, Albert Scheck, Joerg Franke, and Patrick Bruendl.
+\newblock {PB-IAD}: Utilizing multimodal foundation models for semantic
+  industrial anomaly detection in dynamic manufacturing environments, 2025.
+
+\bibitem{nguyen2024branches}
+Thong~Phi Nguyen, Donghyung Kim, Hyun-Kyo Lim, and Jonghun Yoon.
+\newblock Revolutionizing robotized assembly for wire harness: A 3d
+  vision-based method for multiple wire-branch detection.
+\newblock {\em Journal of Manufacturing Systems}, 72:360--372, 2024.
+
+\bibitem{roth2022patchcore}
+Karsten Roth, Latha Pemula, Joaquin Zepeda, Bernhard Schölkopf, Thomas Brox,
+  and Peter Gehler.
+\newblock Towards total recall in industrial anomaly detection.
+\newblock In {\em IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition}, pages 14318--14328, 2022.
+
+\bibitem{scheck2025stripped}
+Albert Scheck and Patrick Bründl.
+\newblock Stripped wire dataset, 2025.
+
+\bibitem{todorov2012mujoco}
+Emanuel Todorov, Tom Erez, and Yuval Tassa.
+\newblock {MuJoCo}: A physics engine for model-based control.
+\newblock In {\em IEEE/RSJ International Conference on Intelligent Robots and
+  Systems}, pages 5026--5033, 2012.
+
+\bibitem{wang2024review}
+Hao Wang, Omkar Salunkhe, Walter Quadrini, Dan Lämkull, Fredrik Ore, Mélanie
+  Despeisse, Luca Fumagalli, Johan Stahre, and Björn Johansson.
+\newblock A systematic literature review of computer vision applications in
+  robotized wire harness assembly, 2023.
+
+\end{thebibliography}

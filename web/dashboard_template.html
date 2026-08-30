@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HarnessSim4 Replay Lab</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+      background: light-dark(#eef1f4, #15181c);
+      color: light-dark(#20252a, #eef2f5);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; gap: 20px; align-items: end; justify-content: space-between; flex-wrap: wrap; }
+    h1 { margin: 0 0 4px; font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 600; }
+    p { margin: 0; color: light-dark(#5c6670, #aeb8c1); }
+    .controls { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+    label { display: grid; gap: 5px; font-size: .88rem; }
+    select, button, input { font: inherit; }
+    select, button {
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid light-dark(#b7bec5, #424950);
+      border-radius: 8px;
+      background: light-dark(#ffffff, #242a30);
+      color: inherit;
+    }
+    button { cursor: pointer; }
+    .stage {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 16px;
+      align-items: start;
+    }
+    .viewer, .metrics {
+      background: light-dark(#ffffff, #20252a);
+      border: 1px solid light-dark(#c9cfd5, #3c434a);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    img { display: block; width: 100%; height: auto; border-radius: 7px; background: #e8ebee; }
+    input[type="range"] { width: 100%; margin-top: 12px; }
+    .frame-line { display: flex; justify-content: space-between; margin-top: 5px; color: light-dark(#5c6670, #aeb8c1); font-size: .86rem; }
+    .metrics h2 { margin: 0 0 10px; font-size: 1.05rem; font-weight: 600; }
+    dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; }
+    dt { color: light-dark(#5c6670, #aeb8c1); overflow-wrap: anywhere; }
+    dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+    .success { color: light-dark(#147a48, #65d69b); }
+    .failure { color: light-dark(#b12d27, #ff837c); }
+    @media (max-width: 760px) {
+      body { padding: 14px; }
+      .stage { grid-template-columns: 1fr; }
+      .metrics { order: -1; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>HarnessSim4 Replay Lab</h1>
+        <p>四类线束机器人，共享柔性物体物理与拓扑评测。</p>
+      </div>
+      <div class="controls">
+        <label>机器人
+          <select id="task-select"></select>
+        </label>
+        <button id="play-button" type="button" aria-pressed="false">播放</button>
+        <button id="reset-button" type="button">回到起点</button>
+      </div>
+    </header>
+    <section class="stage">
+      <div class="viewer">
+        <img id="frame-image" alt="当前机器人仿真帧">
+        <input id="frame-range" type="range" min="0" max="0" value="0" aria-label="仿真帧">
+        <div class="frame-line"><span id="frame-label">帧 1/1</span><span id="task-label"></span></div>
+      </div>
+      <aside class="metrics" aria-live="polite">
+        <h2 id="robot-name"></h2>
+        <dl id="metrics-list"></dl>
+      </aside>
+    </section>
+  </main>
+  <script>
+    /*__REPLAY_DATA__*/
+    const select = document.getElementById("task-select");
+    const image = document.getElementById("frame-image");
+    const range = document.getElementById("frame-range");
+    const playButton = document.getElementById("play-button");
+    const resetButton = document.getElementById("reset-button");
+    const frameLabel = document.getElementById("frame-label");
+    const taskLabel = document.getElementById("task-label");
+    const robotName = document.getElementById("robot-name");
+    const metricsList = document.getElementById("metrics-list");
+    let timer = null;
+
+    const formatValue = (value) => {
+      if (typeof value === "boolean") return value ? "是" : "否";
+      if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(3);
+      return String(value);
+    };
+    const renderMetrics = (replay) => {
+      metricsList.replaceChildren();
+      const entries = [["success", replay.success], ["steps", replay.steps], ...Object.entries(replay.metrics)];
+      for (const [key, value] of entries) {
+        const dt = document.createElement("dt");
+        const dd = document.createElement("dd");
+        dt.textContent = key.replaceAll("_", " ");
+        dd.textContent = formatValue(value);
+        if (key === "success") dd.className = value ? "success" : "failure";
+        metricsList.append(dt, dd);
+      }
+    };
+    const updateFrame = () => {
+      const replay = REPLAYS[select.value];
+      const index = Number(range.value);
+      image.src = replay.frames[index];
+      frameLabel.textContent = `帧 ${index + 1}/${replay.frames.length}`;
+    };
+    const selectTask = () => {
+      const replay = REPLAYS[select.value];
+      range.max = String(replay.frames.length - 1);
+      range.value = "0";
+      robotName.textContent = replay.robot;
+      taskLabel.textContent = `${replay.policy} · difficulty ${replay.difficulty}`;
+      renderMetrics(replay);
+      updateFrame();
+    };
+    const stop = () => {
+      if (timer !== null) window.clearInterval(timer);
+      timer = null;
+      playButton.textContent = "播放";
+      playButton.setAttribute("aria-pressed", "false");
+    };
+    for (const [key, replay] of Object.entries(REPLAYS)) {
+      const option = document.createElement("option");
+      option.value = key;
+      option.textContent = `${replay.robot} — ${replay.task}`;
+      select.append(option);
+    }
+    select.addEventListener("change", () => { stop(); selectTask(); });
+    range.addEventListener("input", updateFrame);
+    resetButton.addEventListener("click", () => { stop(); range.value = "0"; updateFrame(); });
+    playButton.addEventListener("click", () => {
+      if (timer !== null) { stop(); return; }
+      playButton.textContent = "暂停";
+      playButton.setAttribute("aria-pressed", "true");
+      timer = window.setInterval(() => {
+        const replay = REPLAYS[select.value];
+        range.value = String((Number(range.value) + 1) % replay.frames.length);
+        updateFrame();
+      }, 100);
+    });
+    selectTask();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,71 @@
+\begin{thebibliography}{10}
+
+\bibitem{grannen2023stabilize}
+Jennifer Grannen, Yilin Wu, Brandon Vu, and Dorsa Sadigh.
+\newblock Stabilize to act: Learning to coordinate for bimanual manipulation.
+\newblock In {\em Conference on Robot Learning}, volume 229 of {\em Proceedings
+  of Machine Learning Research}, pages 563--576, 2023.
+
+\bibitem{muller2007pbd}
+Matthias M{\"u}ller, Bruno Heidelberger, Marcus Hennix, and John Ratcliff.
+\newblock Position based dynamics.
+\newblock {\em Journal of Visual Communication and Image Representation},
+  18(2):109--118, 2007.
+
+\bibitem{sundaresan2021untangling}
+Priya Sundaresan, Jennifer Grannen, Brijen Thananjeyan, Ashwin Balakrishna,
+  Jeffrey Ichnowski, Ellen Novoseller, Minho Hwang, Michael Laskey, Joseph
+  Gonzalez, and Ken Goldberg.
+\newblock Untangling dense non-planar knots by learning manipulation features
+  and recovery policies.
+\newblock In {\em Robotics: Science and Systems}, 2021.
+
+\bibitem{todorov2012mujoco}
+Emanuel Todorov, Tom Erez, and Yuval Tassa.
+\newblock {MuJoCo}: A physics engine for model-based control.
+\newblock In {\em IEEE/RSJ International Conference on Intelligent Robots and
+  Systems}, pages 5026--5033, 2012.
+
+\bibitem{viswanath2022long}
+Vainavi Viswanath, Kaushik Shivakumar, Justin Kerr, Brijen Thananjeyan, Ellen
+  Novoseller, Jeffrey Ichnowski, Alejandro Escontrela, Michael Laskey, Joseph
+  Gonzalez, and Ken Goldberg.
+\newblock Autonomously untangling long cables.
+\newblock In {\em Robotics: Science and Systems}, 2022.
+
+\bibitem{viswanath2023handloom}
+Vainavi Viswanath, Kaushik Shivakumar, Mallika Parulekar, Jainil Ajmera, Justin
+  Kerr, Jeffrey Ichnowski, Richard Cheng, Thomas Kollar, and Ken Goldberg.
+\newblock {HANDLOOM}: Learned tracing of one-dimensional objects for inspection
+  and manipulation.
+\newblock In {\em Conference on Robot Learning}, volume 229 of {\em Proceedings
+  of Machine Learning Research}, pages 341--357, 2023.
+
+\bibitem{wang2022offlineonline}
+Changhao Wang, Yuyou Zhang, Xiang Zhang, Zheng Wu, Xinghao Zhu, Shiyu Jin,
+  Te~Tang, and Masayoshi Tomizuka.
+\newblock Offline-online learning of deformation model for cable manipulation
+  with graph neural networks, 2022.
+
+\bibitem{yu2023wholebody}
+Mingrui Yu, Kangchen Lv, Changhao Wang, Yongpeng Jiang, Masayoshi Tomizuka, and
+  Xiang Li.
+\newblock Generalizable whole-body global manipulation of deformable linear
+  objects by dual-arm robot in 3-d constrained environments, 2023.
+
+\bibitem{yu2022coarse}
+Mingrui Yu, Kangchen Lv, Changhao Wang, Masayoshi Tomizuka, and Xiang Li.
+\newblock A coarse-to-fine framework for dual-arm manipulation of deformable
+  linear objects with whole-body obstacle avoidance, 2022.
+
+\bibitem{zhang2024twisting}
+Xiang Zhang, Hsien-Chung Lin, Yu~Zhao, and Masayoshi Tomizuka.
+\newblock Harnessing with twisting: Single-arm deformable linear object
+  manipulation for industrial harnessing task, 2024.
+
+\bibitem{zhao2023act}
+Tony~Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn.
+\newblock Learning fine-grained bimanual manipulation with low-cost hardware.
+\newblock In {\em Robotics: Science and Systems}, 2023.
+
+\end{thebibliography}

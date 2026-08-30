@@ -1,0 +1,46 @@
+WARNING Wed Aug 26 16:42:43 2026: Nan, Inf or huge value in QACC at DOF 28. The simulation is unstable. Time = 1.1400.
+
+WARNING Wed Aug 26 20:46:27 2026: Attach conflict when attaching 'ur5e' to 'HarnessSim4 InspectBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:46:42 2026: Attach conflict when attaching 'ur5e' to 'HarnessSim4 InspectBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:47:50 2026: Attach conflict when attaching 'iiwa14' to 'HarnessSim4 InsertBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:47:50 2026: Attach conflict when attaching 'robotiq_2f85' to 'HarnessSim4 InsertBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Wed Aug 26 20:48:00 2026: Attach conflict when attaching 'aloha' to 'HarnessSim4 BranchBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Wed Aug 26 20:48:26 2026: Attach conflict when attaching 'aloha_scene' to 'HarnessSim4 BranchBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Wed Aug 26 20:52:44 2026: Attach conflict when attaching 'ur5e' to 'HarnessSim4 InspectBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:52:44 2026: Attach conflict when attaching 'iiwa14' to 'HarnessSim4 InsertBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:52:44 2026: Attach conflict when attaching 'robotiq_2f85' to 'HarnessSim4 InsertBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Wed Aug 26 20:52:44 2026: Attach conflict when attaching 'ur10e' to 'HarnessSim4 RouteBot', policy is 'warning'
+integrator: parent has 0 (default), child has 3, keeping parent value
+
+WARNING Wed Aug 26 20:52:44 2026: Attach conflict when attaching 'robotiq_2f85' to 'HarnessSim4 RouteBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Wed Aug 26 20:52:45 2026: Attach conflict when attaching 'aloha_scene' to 'HarnessSim4 BranchBot', policy is 'warning'
+impratio: parent has 1 (default), child has 10, keeping parent value
+cone: parent has 0 (default), child has 1, keeping parent value
+
+WARNING Thu Aug 27 06:34:49 2026: Nan, Inf or huge value in QACC at DOF 99. The simulation is unstable. Time = 0.0100.
+

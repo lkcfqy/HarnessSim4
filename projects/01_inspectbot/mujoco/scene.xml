@@ -1,0 +1,94 @@
+<mujoco model="HarnessSim4 InspectBot">
+  <compiler autolimits="true" angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81" solver="Newton" iterations="80"/>
+  <size memory="32M"/>
+  <extension>
+    <plugin plugin="mujoco.elasticity.cable"/>
+  </extension>
+  <statistic center="0 0 .24" extent="1.5"/>
+  <visual>
+    <global offwidth="1920" offheight="1080"/>
+    <headlight ambient=".20 .22 .25" diffuse=".52 .55 .58" specular=".25 .25 .25"/>
+    <quality shadowsize="8192" offsamples="4" numslices="32" numstacks="24"/>
+    <map znear=".01" zfar="8" fogstart="3" fogend="6"/>
+    <rgba haze=".12 .16 .20 1"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1=".16 .21 .28" rgb2=".015 .02 .03" width="512" height="3072"/>
+    <texture type="2d" name="factory_floor_tex" builtin="checker" mark="edge" rgb1=".16 .18 .20" rgb2=".11 .13 .15" markrgb=".35 .38 .40" width="512" height="512"/>
+    <material name="factory_floor" texture="factory_floor_tex" texuniform="true" texrepeat="8 8" reflectance=".12"/>
+    <material name="board" rgba=".22 .25 .28 1" specular=".35" shininess=".32"/>
+    <material name="wire" rgba=".035 .045 .055 1" specular=".42" shininess=".4"/>
+    <material name="robot" rgba=".12 .32 .52 1"/>
+    <material name="fixture" rgba=".38 .42 .46 1" specular=".65" shininess=".5"/>
+    <material name="frame" rgba=".10 .12 .14 1" specular=".55" shininess=".45"/>
+    <material name="rubber" rgba=".035 .04 .045 1"/>
+    <material name="guard" rgba=".12 .45 .62 .16" specular=".8" shininess=".7"/>
+  </asset>
+  <worldbody>
+    <light pos="-.7 -.8 2.2" dir=".25 .3 -1" directional="true" diffuse=".82 .86 .92" specular=".38 .38 .38" castshadow="true"/>
+    <light pos="1.1 -.2 1.4" dir="-.7 .1 -1" diffuse=".45 .50 .56" specular=".18 .18 .18" castshadow="true"/>
+    <light pos="-.8 .9 1.2" dir=".5 -.5 -.8" diffuse=".28 .36 .48" specular=".12 .16 .2"/>
+    <geom name="factory_floor" type="plane" size="3 3 .02" pos="0 0 -.72" material="factory_floor" contype="0" conaffinity="0"/>
+    <geom name="board" type="box" size=".72 .55 .04" pos="0 0 -.04" material="board" friction="1 .02 .002"/>
+    <geom type="box" size=".045 .045 .34" pos="-.62 -.45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos=".62 -.45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos="-.62 .45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".045 .045 .34" pos=".62 .45 -.38" material="frame" contype="0" conaffinity="0"/>
+    <geom type="cylinder" size=".17 .10" pos="0 -.72 -.10" material="frame" contype="0" conaffinity="0"/>
+    <geom type="box" size=".12 .09 .17" pos=".62 .43 .17" material="frame" contype="0" conaffinity="0"/>
+    <geom type="cylinder" size=".018 .06" pos=".62 .43 .40" rgba=".08 .72 .30 1" contype="0" conaffinity="0"/>
+    <geom type="cylinder" size=".018 .06" pos=".62 .43 .52" rgba=".96 .63 .08 1" contype="0" conaffinity="0"/>
+    <geom type="box" size=".008 .52 .40" pos="-.74 0 .36" material="guard" contype="0" conaffinity="0"/>
+    <geom type="box" size=".008 .52 .40" pos=".74 0 .36" material="guard" contype="0" conaffinity="0"/>
+    <body name="cell_focus" pos="0 -.04 .18"/>
+    <camera name="overview" mode="targetbodycom" target="cell_focus" pos="1.48 -1.78 1.28" fovy="43"/>
+    <camera name="process_view" mode="targetbodycom" target="cell_focus" pos=".15 -1.35 .94" fovy="38"/>
+    <body name="left_fixture" pos="-.46 0 .13">
+      <geom type="box" size=".04 .075 .018" pos="0 0 -.055" material="fixture"/>
+      <geom type="box" size=".022 .052 .045" material="fixture"/>
+      <geom type="box" size=".010 .044 .030" pos=".026 0 0" material="rubber"/>
+    </body>
+    <body name="right_fixture" pos=".46 0 .13">
+      <geom type="box" size=".04 .075 .018" pos="0 0 -.055" material="fixture"/>
+      <geom type="box" size=".022 .052 .045" material="fixture"/>
+      <geom type="box" size=".010 .044 .030" pos="-.026 0 0" material="rubber"/>
+    </body>
+    <body name="scanner" mocap="true" pos="-.40 -.09 .24">
+      <geom type="box" size=".045 .035 .03" rgba="0 0 0 0" contype="0" conaffinity="0"/>
+      <geom type="cylinder" size=".016 .012" pos="0 .035 -.015" quat=".7071 .7071 0 0" rgba="0 0 0 0" contype="0" conaffinity="0"/>
+      <site name="scanner_fov" type="ellipsoid" size=".035 .08 .018" pos="0 .08 -.08" rgba=".15 .65 1 .18"/>
+    </body>
+    <site name="defect_1" type="sphere" size=".012" pos="-.20 0 .145" rgba="1 .22 .12 1"/>
+    <site name="defect_2" type="sphere" size=".012" pos=".08 0 .145" rgba="1 .22 .12 1"/>
+    <site name="defect_3" type="sphere" size=".012" pos=".30 0 .145" rgba="1 .22 .12 1"/>
+    <!-- Frozen 12-site topology used by the real-image active-inspection benchmark. -->
+    <site name="inspection_site_00" type="sphere" size=".009" pos="-.414 0 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_01" type="sphere" size=".009" pos="-.294 0 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_02" type="sphere" size=".009" pos="-.175 0 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_03" type="sphere" size=".009" pos="-.055 0 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_04" type="sphere" size=".011" pos=".055 0 .145" rgba="1 .48 .08 1"/>
+    <site name="inspection_site_05" type="sphere" size=".009" pos=".166 .072 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_06" type="sphere" size=".010" pos=".285 .138 .145" rgba=".96 .63 .08 1"/>
+    <site name="inspection_site_07" type="sphere" size=".011" pos=".405 .180 .145" rgba="1 .32 .08 1"/>
+    <site name="inspection_site_08" type="sphere" size=".009" pos=".166 -.072 .145" rgba=".18 .72 1 1"/>
+    <site name="inspection_site_09" type="sphere" size=".010" pos=".285 -.138 .145" rgba=".96 .63 .08 1"/>
+    <site name="inspection_site_10" type="sphere" size=".011" pos=".405 -.180 .145" rgba="1 .32 .08 1"/>
+    <site name="inspection_site_11" type="sphere" size=".012" pos=".075 0 .158" rgba="1 .18 .08 1"/>
+    <geom name="upper_branch_visual" type="capsule" fromto=".055 0 .145 .405 .180 .145" size=".006" material="wire" contype="0" conaffinity="0"/>
+    <geom name="lower_branch_visual" type="capsule" fromto=".055 0 .145 .405 -.180 .145" size=".006" material="wire" contype="0" conaffinity="0"/>
+    <composite type="cable" prefix="inspect_" curve="s" count="41 1 1" size=".92" offset="-.46 0 .13" initial="none">
+      <plugin plugin="mujoco.elasticity.cable">
+        <config key="twist" value="2e5"/>
+        <config key="bend" value="1.2e5"/>
+        <config key="vmax" value=".08"/>
+      </plugin>
+      <joint kind="main" damping=".03"/>
+      <geom type="capsule" size=".006" material="wire" condim="3" friction=".8 .02 .002"/>
+    </composite>
+  </worldbody>
+  <equality>
+    <connect name="inspect_left" body1="inspect_B_first" body2="left_fixture" anchor="0 0 0"/>
+    <connect name="inspect_right" body1="inspect_B_last" body2="right_fixture" anchor="0 0 0"/>
+  </equality>
+</mujoco>

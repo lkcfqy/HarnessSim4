@@ -1,0 +1,322 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{balance}
+\hypersetup{hidelinks}
+
+\definecolor{draftred}{RGB}{150,20,20}
+\newcommand{\draftwarning}{\textcolor{draftred}{DRAFT---NOT FOR SUBMISSION}}
+\newcommand{\TopoCount}{TBD}
+\newcommand{\TopoRate}{TBD}
+\newcommand{\GeomCount}{TBD}
+\newcommand{\GeomRate}{TBD}
+\newcommand{\ACTPointerCount}{TBD}
+\newcommand{\ACTRelCount}{TBD}
+\newcommand{\TeacherCount}{TBD}
+\newcommand{\MaxHolmP}{TBD}
+\newcommand{\MuJoCoTopoCount}{TBD}
+\newcommand{\MuJoCoGeomCount}{TBD}
+\IfFileExists{../../artifacts/papers/branchbot/final/counterfactual/branch_numbers.tex}
+  {\input{../../artifacts/papers/branchbot/final/counterfactual/branch_numbers.tex}}{}
+
+\title{Semantic Counterfactuals Expose Branch-Identity Shortcuts in
+Bimanual Wire-Harness Manipulation}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\draftwarning
+\end{center}
+
+\begin{abstract}
+Bimanual manipulation of a branched wire harness must preserve endpoint
+identity as well as geometry. We introduce an exact semantic counterfactual in
+which cable state, dynamics, fixtures, and random seed are fixed while the
+observable endpoint--arm--target binding is renamed. Across 600
+physical-seed--assignment episodes per policy, the full relational model
+succeeds in \TopoCount{} (\TopoRate\%), typed ACT variants in
+\ACTPointerCount{} and \ACTRelCount, and the teacher in \TeacherCount. Geometry
+succeeds in \GeomCount{} (\GeomRate\%); every success occurs under the canonical
+assignment and none after the A/B swap. Geometry is lower in all six paired
+cells after Holm correction. Full and ablated semantic models remain tied near
+the teacher ceiling, showing that the benefit is not unique to message passing:
+it follows from preserving observable identity through representation and
+typed action grounding. A direct current-pose MuJoCo backend yields
+\MuJoCoTopoCount/40 successes for the relational model and
+\MuJoCoGeomCount/40 for Geometry; all Geometry successes again occur only under
+the canonical assignment. The evidence establishes a semantic-shortcut failure
+under a fixed two-branch abstraction. It does not establish 3--5 branch
+generalization, image-based identity perception, force control, or production
+performance.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Bimanual manipulation, deformable object manipulation, graph representations,
+semantic grounding, wire-harness assembly.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Wire-harness automation must preserve identity while controlling shape.  Two
+branches can be nearly identical in length and geometry yet terminate in
+different connectors or vehicle subsystems.  Swapping them may leave a tidy,
+crossing-free harness that is electrically and procedurally wrong.  A useful
+controller must therefore answer a relational question---which physical
+endpoint belongs to which arm and destination---before executing geometric
+motion.
+
+Prior systems provide strong real-robot evidence for dense-knot recovery
+\cite{sundaresan2021untangling}, bilateral long-cable untangling
+\cite{viswanath2022long}, learned tracing and manipulation
+\cite{viswanath2023handloom}, and dual-arm DLO planning in constrained 3-D
+environments \cite{yu2022coarse,yu2023wholebody}.  BranchBot does not claim to
+be the first bimanual cable system.  We instead isolate a narrower failure
+mode that these systems do not directly measure: sensitivity to a pure
+renaming of branch identity when all physical evidence is held fixed.
+
+Our contributions are:
+
+\begin{enumerate}
+  \item a paired A/B intervention that exactly reuses each physical seed while
+  changing only observable endpoint--arm--target relations;
+  \item a matched family of graph, Transformer, and typed-pointer controllers
+  trained on balanced, episode-disjoint demonstrations, revealing which
+  semantic channels are sufficient rather than crediting one architecture;
+  \item exact paired statistics, semantic-invariance diagnostics, a mutually
+  exclusive failure taxonomy, and direct closed-loop MuJoCo replication;
+  \item an explicit evidence boundary separating two-branch semantic
+  assignment from multi-branch, vision, force, and hardware claims.
+\end{enumerate}
+
+\section{Related Work}
+
+\paragraph{Cable untangling and tracing.}
+Learned grasp features and recovery policies untangle dense non-planar knots
+on real cables \cite{sundaresan2021untangling}; SGTM combines RGB-D perception
+with bilateral motion primitives for long cables \cite{viswanath2022long}.
+HANDLOOM learns traces and crossing classes from simulated and real RGB-D data
+and supports bimanual manipulation \cite{viswanath2023handloom}.  Those works
+provide stronger perception and hardware evidence than ours.  Their public
+data lack matched branched endpoint--target renamings, so we do not report them
+as real-world semantic completion trials.
+
+\paragraph{Dual-arm DLO control.}
+Coarse-to-fine and whole-body frameworks combine global planning with
+closed-loop control under obstacles and model uncertainty
+\cite{yu2022coarse,yu2023wholebody}.  Tactile or force-aware industrial
+harnessing further demonstrates why task-space mocap cannot stand in for
+contact regulation \cite{zhang2024twisting}.  Our fixed two-branch simulator
+is designed for many exact counterfactual pairs rather than physical fidelity.
+
+\paragraph{Learning representations and temporal actions.}
+Graph networks have modeled cable deformation \cite{wang2022offlineonline};
+graph structure alone is not novel.  ACT predicts temporally chunked bimanual
+actions \cite{zhao2023act}, while role assignment can simplify bimanual
+coordination \cite{grannen2023stabilize}.  We adapt ACT to the same typed state
+and two-pointer action interface so a continuous-output mismatch cannot create
+an artificial advantage for the graph policy.
+
+\section{Problem Formulation}
+
+Let $G_t=(V_t,E_t^p,E_t^s)$ contain observable cable particles, target and arm
+nodes.  $E_t^p$ encodes cable connectivity; $E_t^s$ connects each semantic
+endpoint to its arm, two clearance waypoints, and destination.  A rollout is
+successful only if both semantic endpoint errors fall within the difficulty-
+dependent tolerance, projected cable crossings are zero, and the condition is
+stable for four steps.
+
+For a frozen physical seed $s$, intervention $z\in\{0,1\}$ either retains or
+swaps the A/B names.  Cable coordinates, target coordinates, initial arms,
+noise, material parameters, and integration are identical.  When $z$ changes,
+the endpoint--arm--target relation and corresponding action slots change
+together.  A correct equivariant policy should preserve success, while a
+fixed-name or position shortcut can silently manipulate the wrong endpoint.
+
+\section{Method}
+
+The PBD harness \cite{muller2007pbd} contains a ten-particle trunk and two
+nine-particle branches joined at one junction.  Each node stores normalized
+position, generic type, endpoint/junction role, A/B identity, process order,
+state, progress, and difficulty.  TopoHarness performs three message-passing
+layers over $\mathrm{clip}(E^p+E^s,0,1)$ and produces two node-pointer heads in
+addition to six normalized action logits.  Pointer slot A is masked to
+observable A targets and slot B to B targets.  Selected coordinates replace
+the continuous position outputs; both arms retain their assigned endpoints.
+
+The Geometry model has the same hidden width and training schedule but removes
+adjacency, endpoint/junction identity, process order, and A/B features.  Three
+graph ablations retain only physical edges (leaving unary identity), retain
+only semantic edges, or retain both relations while removing unary ID/order
+features.  The ACT-style baseline is an independent compact implementation
+with a CVAE Transformer, eight-action chunks, temporal ensembling, and the same
+data.  ACT-Pointer adds legal A/B candidate sets at action grounding.
+ACT-RelPool additionally averages fixed one-hop semantic-neighbor features
+before its Transformer; it does not use learned graph propagation.  Thus the
+suite tests several distinct ways of carrying semantic identity to the action,
+not merely graph versus non-graph architecture.
+
+\section{Experimental Protocol}
+
+The raw corpus contains 420 complete teacher rollouts and 43,258 sampled
+states.  Because the teacher can fail on difficult cable states, model fitting
+uses a frozen successful-only subset of 160/40/80 training/validation/test
+episodes (25,740 states; SHA-256 prefix \texttt{2e52208d2f41}).  Every split is
+balanced across difficulty and A/B assignment; whole episodes and physical
+seeds are disjoint.  The final evaluation starts at seed 66,000,000, outside
+all corpus seed ranges, and contains 100 new physical seeds at each difficulty
+$0.2,0.5,0.8$.  Both semantic assignments are executed for every seed.
+
+All learned graph policies use 64 hidden units and three layers.  ACT variants
+use 48 hidden units, one encoder/decoder layer, and eight-step chunks.  Models
+see identical demonstrations within their family; model selection uses only
+validation loss.  We report Wilson intervals, per-difficulty and per-assignment
+success, endpoint errors, crossings, motion length, failures, and paired exact
+McNemar tests with Holm family-wise correction.  A single training seed per
+model remains a limitation; paired evaluation seeds quantify rollout, not
+training, uncertainty.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/mujoco_validation/branch_mujoco_final.png}
+  \caption{BranchBot visual digital twin: two UR10e arms and Robotiq 2F-85
+  grippers around a native MuJoCo trunk--junction--branch cable.  Robot meshes
+  are collision-disabled visual IK followers and do not alter cable physics.}
+  \label{fig:visual-twin}
+\end{figure}
+
+\section{Results}
+
+\begin{table}[t]
+  \centering
+  \caption{Frozen PBD counterfactual.  Each policy receives 300 physical seeds
+  under both semantic assignments (600 episodes).}
+  \label{tab:main}
+  \IfFileExists{../../artifacts/papers/branchbot/final/counterfactual/branch_paper_table.tex}
+    {{\small\setlength{\tabcolsep}{2.5pt}%
+      \input{../../artifacts/papers/branchbot/final/counterfactual/branch_paper_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen table generated by \texttt{sim-eval-branch-paper}}}}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{../../artifacts/papers/branchbot/final/counterfactual/branch_counterfactual_heatmap.pdf}
+    {\includegraphics[width=\columnwidth]{%
+      ../../artifacts/papers/branchbot/final/counterfactual/branch_counterfactual_heatmap.pdf}}
+    {\fbox{\parbox[c][1.25in][c]{0.94\columnwidth}{\centering
+      Frozen difficulty--assignment heatmap}}}
+  \caption{Success under the exact A/B intervention (100 paired physical seeds
+  per cell).  Both columns share identical physics; only semantic binding is
+  renamed.}
+  \label{fig:heatmap}
+\end{figure}
+
+\paragraph{Paired semantic intervention.}
+The frozen main table contains \TopoCount{} relational successes and
+\GeomCount{} Geometry successes.  TopoHarness differs on only 2 of 300
+canonical/swapped physical pairs (99.3\% outcome agreement).  Geometry obtains
+all \GeomCount{} successes in the canonical condition and 0/300 after the A/B
+swap; its paired outcome agreement is 59.0\%.  Geometry is lower than
+TopoHarness in every difficulty--assignment cell after Holm correction, with
+the largest adjusted value \MaxHolmP.  Untyped ACT reaches 432/600 and exhibits
+15 canonical-success/swapped-failure pairs versus one in the reverse
+direction.  At difficulty 0.8 it is lower than TopoHarness for both assignments
+(adjusted $p=5.94\!\times\!10^{-3}$ and $4.81\!\times\!10^{-6}$).  ACT-Pointer
+reaches \ACTPointerCount{} and ACT-RelPool \ACTRelCount, both near the scripted
+teacher's \TeacherCount.  The exact paired tests avoid treating the two
+semantic assignments of one physical seed as independent.
+
+\paragraph{Ablations and interpretation.}
+Removing semantic edges (while retaining unary identity), removing physical
+edges (while retaining semantic identity), or removing unary ID/order (while
+retaining semantic relations) yields 477, 478, and 481 successes, respectively,
+versus 480 for TopoHarness.  Typed ACT also reaches the same band.  The data
+therefore reject a unique message-passing explanation: multiple semantic
+channels are sufficient when the two simultaneous commands remain type-bound.
+The unsupported alternative is geometry alone, which learns a canonical
+left/right shortcut and collapses under renaming.
+
+\begin{table}[t]
+  \centering
+  \caption{Direct current-pose MuJoCo observation/task-space-control audit.
+  The detailed arms are visual IK twins, not force controllers.}
+  \label{tab:mujoco}
+  \IfFileExists{../../artifacts/papers/branchbot/final/mujoco_direct/branch_mujoco_direct_table.tex}
+    {{\small\setlength{\tabcolsep}{2.5pt}%
+      \input{../../artifacts/papers/branchbot/final/mujoco_direct/branch_mujoco_direct_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen direct-MuJoCo table}}}
+\end{table}
+
+\paragraph{Cross-physics closed loop.}
+For each of 20 paired fixture and initial-gripper perturbations, the graph is
+rebuilt from current MuJoCo cable bodies, sites, and mocap poses at every
+control step.  Both policy outputs directly move the two task-space grippers;
+no PBD trajectory, stage event, or success label is replayed.  TopoHarness
+completes \MuJoCoTopoCount/40 semantic trials and Geometry completes
+\MuJoCoGeomCount/40.  TopoHarness is 20/20 under each assignment; all 13
+Geometry successes are canonical and its swapped score is 0/20.  This
+replicates the semantic-shortcut diagnosis under a second deformable backend
+\cite{todorov2012mujoco}, but does not validate joint torque or contact-force
+control.
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{../../artifacts/papers/branchbot/final/mujoco_direct/branch_mujoco_direct_topology_final.png}
+    {\includegraphics[width=\columnwidth]{%
+      ../../artifacts/papers/branchbot/final/mujoco_direct/branch_mujoco_direct_topology_final.png}}
+    {\includegraphics[width=\columnwidth]{%
+      ../../artifacts/mujoco_validation/branch_mujoco_final.png}}
+  \caption{Representative direct-observation MuJoCo final state.  Native cable
+  endpoint--fixture distances define success; the robot mesh only visualizes
+  task-space commands.}
+  \label{fig:mujoco-final}
+\end{figure}
+\FloatBarrier
+
+\section{Limitations and Claim Boundary}
+
+The central intervention contains exactly two branches and two labels.  It
+does not establish permutation-equivariant control for three to five branches,
+sequential regrasp planning, or non-symmetric branch materials.  PBD is planar;
+its crossing count is a projection metric.  MuJoCo uses 3-D elastic cables but
+task-space mocap grippers and collision-disabled visual robots.  No experiment
+uses raw camera images, detects branch identity under occlusion, measures
+contact force, or runs on hardware.  HANDLOOM is relevant public perception
+data but lacks the matched branched semantic labels required by our causal
+test, so it is not counted as real-world completion evidence.  These gaps keep
+the manuscript a research draft.
+
+\section{Ethical and Societal Considerations}
+
+The study uses synthetic robot trajectories and no personal data.  Harness
+automation could reduce repetitive ergonomic strain but may also displace
+manual assembly work.  The simulated controller is not safety certified and
+must not command a production cell without guarding, risk assessment, force
+limits, and qualified human supervision.  We therefore expose unsuccessful
+episodes and avoid translating simulator rates into labor or financial claims.
+
+\section{Reproducibility}
+
+The package includes both source and successful-only datasets, whole-episode
+split manifests, hashes, frozen checkpoints, exact seeds, per-episode CSV/JSON,
+statistical audit scripts, plotting code, MJCF, visual-asset licenses, and a
+one-command build.  The ACT baseline is an independent adaptation and is not
+presented as upstream ACT code.  An audit recomputes counts, Wilson inputs,
+semantic pairs, exact tests, checkpoint hashes, and PBD/MuJoCo seed separation
+before the PDF is copied to the release directory.
+
+\balance
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

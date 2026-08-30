@@ -1,0 +1,499 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{balance}
+\hypersetup{hidelinks}
+
+\definecolor{draftred}{RGB}{150,20,20}
+\newcommand{\draftwarning}{\textcolor{draftred}{DRAFT---NOT FOR SUBMISSION}}
+\newcommand{\PrimaryEpisodes}{TBD}
+\newcommand{\HardOursSuccess}{TBD}
+\newcommand{\HardGuardedSuccess}{TBD}
+\newcommand{\HardDirectSuccess}{TBD}
+\newcommand{\HardSpiralSuccess}{TBD}
+\newcommand{\HardNoOrientSuccess}{TBD}
+\newcommand{\HardNoRetractSuccess}{TBD}
+\newcommand{\HardOursDamage}{TBD}
+\newcommand{\HardDirectDamage}{TBD}
+\newcommand{\HardDeltaDirect}{TBD}
+\newcommand{\HardDeltaSpiral}{TBD}
+\newcommand{\HardDeltaNoOrient}{TBD}
+\newcommand{\HardDirectHolm}{TBD}
+\newcommand{\HardDirectForceDelta}{TBD}
+\newcommand{\MuJoCoEpisodes}{TBD}
+\newcommand{\MuJoCoOursSuccess}{TBD}
+\newcommand{\MuJoCoOursDamage}{TBD}
+\newcommand{\MuJoCoDirectSuccess}{TBD}
+\newcommand{\MuJoCoDirectDamage}{TBD}
+\newcommand{\MuJoCoNoRetractDamage}{TBD}
+\newcommand{\MuJoCoGuardedSuccess}{TBD}
+\newcommand{\PublicEpisodes}{TBD}
+\newcommand{\PublicFrames}{TBD}
+\newcommand{\PublicTrainEpisodes}{TBD}
+\newcommand{\PublicTestEpisodes}{TBD}
+\newcommand{\PublicRidgeRMSE}{TBD}
+\newcommand{\PublicIdentityRMSE}{TBD}
+\newcommand{\PublicRMSEGain}{TBD}
+\newcommand{\AuditChecks}{TBD}
+\IfFileExists{../../artifacts/papers/insertbot/formal/paper_assets/insert_numbers.tex}
+  {\input{../../artifacts/papers/insertbot/formal/paper_assets/insert_numbers.tex}}{}
+
+\title{Contact-State Recovery for Cable-Connector Insertion:\\
+Paired Force-Safety Tests and a Direct MuJoCo Audit}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\draftwarning
+\end{center}
+
+\begin{abstract}
+Cable-connector insertion couples visual misalignment, cable load, frictional
+contact, and damage-sensitive parts. We present ContactBelief, a contact-state
+recovery controller, and a paired protocol separating algorithmic from
+robot-execution evidence. The 2.5-D benchmark evaluates eight policies on 600
+shared scenarios (\PrimaryEpisodes{} episodes). In the hard condition,
+ContactBelief achieves \HardOursSuccess\% verified, undamaged success, versus
+\HardDirectSuccess\% for direct insertion and \HardSpiralSuccess\% for spiral
+search. The paired gains of \HardDeltaDirect{} and \HardDeltaSpiral{} points
+remain significant after Holm correction. Removing orientation updates lowers
+success to \HardNoOrientSuccess\%; removing retract lowers it to
+\HardNoRetractSuccess\%. Guarded admittance reaches \HardGuardedSuccess\%
+success with lower mean peak force, and ContactBelief does not significantly
+outperform it. A \MuJoCoEpisodes{}-episode direct MuJoCo audit uses current
+observations and native contact termination: ContactBelief reaches
+\MuJoCoOursSuccess\% success and \MuJoCoOursDamage\% damage, versus
+\MuJoCoDirectSuccess\% and \MuJoCoDirectDamage\% for direct insertion. These
+results support contact-state recovery under two synthetic physics abstractions,
+not real connector reliability, torque-level control, hardware safety, or
+factory readiness.
+\end{abstract}
+
+\noindent\textit{Note to Practitioners---}
+Small terminal-pose errors, cable drag and friction can turn automated connector
+insertion into a jam or a damaged part. This study evaluates a recovery sequence
+that detects unexpected contact, unloads the terminal, updates alignment and
+then verifies locking. In the synthetic benchmark it is substantially safer
+than blind direct insertion and spiral search, but it does not significantly
+outperform a carefully tuned guarded-admittance controller. The practical
+message is therefore not to replace a reliable force-control baseline with an
+unverified learned controller. A deployment should first measure connector
+clearance, insertion force, latch behavior and cable reaction for each product
+family, then compare controllers on paired fixtures while recording peak force,
+damage, cycle time, retries and a post-insertion pull test. The MuJoCo robot in
+this paper is a task-space digital twin, not evidence of production reliability.
+The proposed hardware gate specifies the measurements required before factory
+claims are made.
+
+\begin{IEEEkeywords}
+Contact-rich manipulation, force control, industrial automation, robotic
+assembly, wire-harness manufacturing.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Insertion is often presented as a rigid peg-in-hole problem, yet an electrical
+connector at the end of a wire harness is not simply a peg.  Upstream cable
+bending creates a load that changes with approach depth; the grasped terminal
+can rotate; socket chamfers and latches create discontinuous contact; and a
+successful-looking insertion must still be locked and verified.  Classical
+compliance and force control provide the right low-level language
+\cite{whitney1982quasistatic,hogan1985impedance}, but the high-level question
+remains: when should a robot keep inserting, when should it infer edge contact,
+and which corrective state should follow?
+
+Learning-based insertion has demonstrated variable compliance, force-only
+policies, visual servoing, residual control, and simulation-to-real transfer
+\cite{beltran2020variable,markert2023force,haugaard2021visual,
+johannink2019residual,tang2023industreal}.  Recent work also targets unseen
+industrial connectors and deformable cable insertion
+\cite{nair2022learning,wu2025dloassembly}.  Those systems motivate hardware
+experiments that this paper does not yet possess.  Our immediate goal is more
+modest and falsifiable: construct an auditable synthetic benchmark in which the
+same latent physical scenario is presented to each controller, define damage
+and lock verification before the formal run, retain strong classical and oracle
+comparators, and test whether the controller behavior survives a second physics
+abstraction with native contacts.
+
+ContactBelief is a finite-state engineering controller, not a learned policy and
+not a Bayesian posterior.  Its ``belief'' is the controller's internal discrete
+estimate of free-space approach, guarded insertion, edge contact, retraction,
+realignment, and verified seating.  Contact wrench signs update the visual
+alignment target; a retract state unloads the guide before the next probe.  The
+paper's contribution is the controller/evidence package rather than a claim that
+this state machine supersedes modern learning systems.
+
+The contributions are:
+\begin{enumerate}
+  \item a paired 2.5-D connector-insertion benchmark with clearance, friction,
+  cable drag, visual and force bias, contact wrench, jamming, damage, retry, and
+  six-step lock verification;
+  \item eight frozen policies, three difficulties, 200 common-random-number
+  scenarios per difficulty, exact paired tests, bootstrap intervals, and
+  orientation/retract ablations;
+  \item a collision-enabled terminal and socket in MuJoCo
+  \cite{todorov2012mujoco}, with controllers observing native state and contact
+  force directly over 300 additional paired episodes; and
+  \item an episode-disjoint public-data ingestion audit plus a
+  \AuditChecks-check independent evidence audit that prevents offline or
+  synthetic metrics from being reported as hardware performance.
+\end{enumerate}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.98\textwidth]{%
+    ../../artifacts/papers/insertbot/formal/paper_assets/insert_system_overview.pdf}
+  \caption{InsertBot evidence and controller overview.  Left: the realistic
+  KUKA/Robotiq visual twin surrounds a compliant, collision-enabled terminal and
+  four-rail socket in the direct MuJoCo audit.  Right: ContactBelief updates its
+  target from contact signs, unloads the guide, realigns, and then retries.
+  Primary results use a paired 2.5-D proxy; no trajectory or contact event is
+  replayed into the direct MuJoCo controller.}
+  \label{fig:overview}
+\end{figure*}
+
+\section{Related Work}
+
+\paragraph{Compliance and force-guided insertion.}
+Remote-center compliance and impedance control established that suitable
+mechanical or commanded compliance can convert contact into alignment rather
+than wedging \cite{whitney1982quasistatic,hogan1985impedance}.  High-level
+search, force regulation, and insertion remain sensitive to contact stiffness.
+Lee and Pham demonstrate one robust controller across a 10--100~N/mm stiffness
+range, illustrating why a strong force baseline is necessary
+\cite{lee2020stiffness}.  ContactBelief is evaluated against guarded admittance
+and does not outperform it significantly in our hardest primary condition.
+
+\paragraph{Learning assembly behavior.}
+Variable-compliance reinforcement learning can combine a nominal trajectory,
+force response, and learned residual action \cite{beltran2020variable}; residual
+RL similarly retains an engineered controller while learning corrections
+\cite{johannink2019residual}.  Force-only offline deep Q-learning has reported
+tight-clearance insertion on hardware \cite{markert2023force}.  Continuous
+visual servoing can reduce the uncertainty region before compliant contact and
+avoid blind search \cite{haugaard2021visual}.  Our baselines isolate these
+ingredients---vision without force, spiral search, guarded force recovery, and
+two state-machine ablations---without claiming to reproduce their full systems.
+
+\paragraph{Connectors, deformable cables, and simulation.}
+Industrial insertion policies can be adapted to unseen connectors by online
+practice \cite{nair2022learning}.  Wu et al. explicitly address a cable-held
+Type-C connector and exploit contact during curriculum RL
+\cite{wu2025dloassembly}.  IndustReal shows substantially stronger evidence than
+ours: contact-rich simulation, policy transfer, and a real assembly system
+\cite{tang2023industreal}.  Simulation nevertheless has a reality gap, especially
+for stiff contact.  We therefore keep the 2.5-D and MuJoCo results separate,
+never pool them, and reserve hardware claims for future experiments.
+
+\section{Contact-State Method}
+
+\subsection{State and sensing}
+
+The primary state is $s_t=(x_t,y_t,\psi_t,\theta_t)$: axial insertion depth,
+lateral displacement, yaw, and pitch.  A 30-mm terminal maps orientation to a
+tip offset
+\begin{equation}
+  e_t=y_t+0.030\psi_t+0.45(0.030)\theta_t,
+\end{equation}
+and the collision envelope is
+\begin{equation}
+  E_t=|e_t|+0.38(0.030)(|\psi_t|+|\theta_t|).
+  \label{eq:envelope}
+\end{equation}
+The controller observes biased/noisy pose $\hat{s}_t$, axial force $F_x$,
+lateral force $F_y$, and contact torque $\tau_c$.  Bias is fixed within an
+episode; noise is a frozen time sequence shared by all policies with the same
+seed.  This pairing prevents one controller from receiving an easier draw.
+
+\subsection{Contact update and recovery}
+
+During free-space approach, visual servoing moves the observed pose toward an
+internal target $(\bar y,\bar\psi,\bar\theta)$.  An edge-contact event is declared
+when lateral force exceeds 0.9~N or axial force approaches the scenario's jam
+threshold.  Contact load is
+\begin{equation}
+  L_t=\max\{|F_y|,F_x-5\},
+\end{equation}
+and the target shifts opposite the lateral contact sign,
+\begin{equation}
+  \bar y\leftarrow \bar y-\operatorname{sgn}(F_y)
+  \operatorname{clip}(0.00055L_t,0.0010,0.0042).
+\end{equation}
+Torque sign also shifts yaw and pitch targets.  The controller retracts for
+$8+\lfloor3d\rfloor$ steps at difficulty $d$, realigns in unloaded space, and
+then resumes a slower probe.  The guarded-admittance comparator uses a higher
+force threshold, lateral-only correction, and a shorter retract.  The
+no-orientation ablation preserves contact and retract but omits angular target
+updates.  The no-retract ablation corrects while loaded; its proxy increases
+effective contact load by 1.45 and accumulates damage impulse above 8~N rather
+than 10~N, representing sliding friction and edge pressure.
+
+\subsection{Contact, jam, damage, and success}
+
+For clearance $c$, violation is $v_t=\max(0,E_t-c)$.  Near the socket, contact
+force is a stiffness-scaled function of $v_t$ and penetration, added to a
+friction, drag, and insertion-speed seating load.  If total load exceeds the
+scenario jam threshold, axial motion is attenuated until retraction unloads the
+contact.  Damage occurs when either peak force exceeds a scenario limit or the
+integral of high force exceeds a scenario impulse limit.  Success requires
+40~mm depth, $E_t\leq0.9c$, no damage, and six consecutive lock-verification
+steps.  An episode ends at verified success, damage, or 320 steps (6.4~s).
+These equations are engineering proxies, not a finite-element connector model.
+
+\section{Paired Evaluation Protocol}
+
+\subsection{Scenario distribution}
+
+Difficulty changes uncertainty rather than policy parameters.  Clearance is
+sampled from $[7.5,10.5](1-0.43d)$~mm.  Friction is
+$U(0.14,0.28)+dU(0.20,0.42)$; contact stiffness is 1.5--2.1~kN/m multiplied by
+$1+0.35d$.  Initial lateral error spans
+$\pm(13+15d)$~mm; yaw spans $\pm(0.10+0.20d)$~rad and pitch 80\% of that range.
+Visual-bias and noise scales grow with $d$, as do three cable-drag components.
+Jam, peak-force, and impulse limits vary per scenario.  The exact equations,
+seed schedule, and pilot history were frozen in a protocol before the formal
+run.
+
+For each $d\in\{0.2,0.5,0.8\}$, 200 latent scenarios are constructed from base
+seed 83,000,000.  Eight policies receive every scenario: ContactBelief, guarded
+admittance, vision-staged without force, spiral search, direct insertion, the
+two ablations, and a state-aware oracle.  The oracle reads latent pose and is an
+upper reference, not a deployable comparator.  There are no exclusions.
+
+\subsection{Endpoints and statistics}
+
+The primary endpoint is verified, undamaged success.  Secondary endpoints are
+first-pass success, damage, jam occurrence, peak force, cycle time, retries, and
+failure type.  Per-policy success and mean force receive deterministic
+10,000-draw nonparametric bootstrap intervals \cite{efron1979bootstrap}.
+Within each difficulty, ContactBelief is compared with seven policies using
+exact paired McNemar tests \cite{mcnemar1947sampling}; paired force uses a
+one-sided Wilcoxon signed-rank test \cite{wilcoxon1945individual}.  Holm
+correction is applied separately across all 21 success tests and all 21 force
+tests \cite{holm1979simple}.  Effect sizes and intervals are reported even when
+tests are not significant.
+
+\subsection{Public-data auxiliary audit}
+
+We retain the MIT-licensed LeRobot ALOHA simulated-insertion dataset as an
+explicitly mismatched public proxy \cite{lerobotAlohaDataset}.  Its hashed cache
+contains \PublicFrames{} finite state--action frames from \PublicEpisodes{}
+complete 500-frame episodes.  A seeded whole-episode split uses
+\PublicTrainEpisodes{} episodes for fitting and \PublicTestEpisodes{} for test,
+with no shared episode.  A 30-input multi-output ridge residual model reaches
+held-out action RMSE \PublicRidgeRMSE{}, versus \PublicIdentityRMSE{} for
+$a_t=s_t$ (\PublicRMSEGain\% lower).  This validates data ingestion, splitting,
+and an offline action interface only.  The rigid dual-arm simulation has no
+automotive wire terminal, cable reaction, camera observation, or contact force;
+it is excluded from every success and force claim below.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{%
+    ../../artifacts/papers/insertbot/formal/paper_assets/insert_success_by_difficulty.pdf}
+  \caption{Verified, undamaged success with deterministic bootstrap 95\%
+  intervals.  Differences are small in the easy condition.  Force-blind
+  baselines degrade sharply as bias, drag, friction, and pose error increase.
+  The state-aware oracle is a ceiling check.}
+  \label{fig:success}
+\end{figure*}
+
+\section{Primary Results}
+
+\begin{table*}[t]
+  \centering
+  \caption{Primary paired benchmark.  Each policy--difficulty cell contains 200
+  episodes.  Peak force and time are means in the hard condition.}
+  \label{tab:main}
+  \resizebox{0.94\textwidth}{!}{%
+    \input{../../artifacts/papers/insertbot/formal/paper_assets/insert_main_table.tex}}
+\end{table*}
+
+\subsection{Difficulty exposes the contact gap}
+
+Easy scenarios are nearly saturated: ContactBelief and the oracle reach 100\%,
+while direct and visual-only insertion reach 99.5\%.  At medium difficulty,
+ContactBelief reaches 94.5\%, compared with 90.0\% guarded, 83.0\% spiral, and
+80.5\% direct/vision-only.  Hard difficulty separates the methods: ContactBelief
+reaches \HardOursSuccess\% (95\% CI 86.0--94.0), direct and vision-only each
+\HardDirectSuccess\%, and spiral \HardSpiralSuccess\%.  ContactBelief's damage
+rate is \HardOursDamage\%, compared with \HardDirectDamage\% for direct
+insertion and 53.5\% for spiral search.
+
+The oracle remains 100\% at all difficulties and therefore shows that the task
+distribution itself is solvable.  ContactBelief is still ten points below that
+ceiling in the hard condition, leaving a meaningful estimation/control gap.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/papers/insertbot/formal/paper_assets/insert_hard_pareto.pdf}
+  \caption{Hard-condition operating points with bootstrap 95\% intervals.
+  ContactBelief occupies a favorable success--force region, but guarded
+  admittance has slightly lower mean force and the oracle remains superior.}
+  \label{fig:pareto}
+\end{figure}
+
+\subsection{Paired effects and ablations}
+
+\begin{table}[t]
+  \centering
+  \caption{Hard-condition paired comparisons, ContactBelief minus comparator.
+  Negative $\Delta$force favors ContactBelief.  Holm correction covers 21 tests
+  per endpoint family.}
+  \label{tab:paired}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/insertbot/formal/paper_assets/insert_paired_hard_table.tex}}
+\end{table}
+
+At hard difficulty, ContactBelief succeeds on 69 seeds where direct insertion
+fails; direct succeeds on only two reciprocal seeds.  This yields a
+\HardDeltaDirect-point effect (bootstrap CI 26.5--40.0) and
+$p=\HardDirectHolm$ after correction.  Mean peak force is
+$|\HardDirectForceDelta|$~N lower (paired CI 1.39--1.65~N).  Against spiral
+search the success gain is \HardDeltaSpiral{} points.  Thus the main conclusion
+is not merely that recovery takes longer: it increases verified success while
+reducing the high-force burden of force-blind insertion.
+
+Removing orientation update reduces hard success from \HardOursSuccess\% to
+\HardNoOrientSuccess\% (\HardDeltaNoOrient{} points, Holm $p=0.011$) and raises
+mean peak force by 3.8~N (Holm $p=1.43\times10^{-6}$).  Removing retract reaches
+\HardNoRetractSuccess\%; the six-point decrement and 1.3-N force increase do not
+remain significant after correction ($p=0.186$ and 0.075).  We therefore claim
+strong primary evidence for orientation correction but only directional primary
+evidence for the retract state.
+
+Guarded admittance is the important counterexample to overclaiming.  It reaches
+\HardGuardedSuccess\%, only four points below ContactBelief; the paired CI
+includes zero and Holm $p=1$.  Its mean peak force is 0.6~N lower, while mean
+cycle time is 0.59~s longer.  The formal result supports parity-to-small-gain
+against this strong baseline, not superiority.
+
+\section{Direct MuJoCo Contact Audit}
+
+\subsection{Independent closed loop}
+
+The second backend uses a 50$\times$12$\times$12-mm collision-enabled terminal,
+four guide rails, a backstop, and a compliant weld to a commanded gripper target.
+Each scenario varies the 3-D start pose, opening, friction, visual/force bias,
+and noise.  The controller observes the current MuJoCo body/site pose and native
+\texttt{mj\_contactForce} values at every outer-loop step.  Contact-aware methods
+have a physics-rate force stop; direct insertion does not.  The 2.5-D trajectory,
+contact event, force, and outcome are never replayed.
+
+Twenty paired seeds at each difficulty and five policies give
+\MuJoCoEpisodes{} episodes.  A seated terminal must remain within axial,
+lateral, vertical, yaw, and pitch tolerances for five updates without crossing
+a scenario damage-force proxy.  The KUKA and Robotiq meshes are visual; the
+audit remains task-space control.  The cable visual/dynamic chain is attached to
+the kinematic gripper target and does not transmit its full reaction force into
+the compliant terminal.  This is an explicit limitation.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{%
+    ../../artifacts/papers/insertbot/formal/paper_assets/insert_mujoco_safety.pdf}
+  \caption{Direct MuJoCo hard-condition audit.  ContactBelief and guarded
+  admittance tie on success and avoid the damage proxy.  Direct insertion and
+  the no-retract ablation exhibit much larger native peak forces and damage.
+  With only 20 paired seeds per difficulty, these are descriptive cross-physics
+  checks rather than replacements for the primary tests.}
+  \label{fig:mujoco}
+\end{figure*}
+
+\begin{table}[t]
+  \centering
+  \caption{Direct MuJoCo audit at difficulty 0.8 ($n=20$ paired scenarios per
+  policy).}
+  \label{tab:mujoco}
+  \resizebox{\columnwidth}{!}{%
+    \input{../../artifacts/papers/insertbot/formal/paper_assets/insert_mujoco_hard_table.tex}}
+\end{table}
+
+At hard difficulty, ContactBelief and guarded admittance both reach
+\MuJoCoOursSuccess\% success with \MuJoCoOursDamage\% damage.  Direct insertion
+falls to \MuJoCoDirectSuccess\% success with \MuJoCoDirectDamage\% damage; the
+no-retract ablation reaches 35\% success with \MuJoCoNoRetractDamage\% damage.
+No-orientation reaches 60\% success but incurs 5\% damage and higher mean peak
+force than ContactBelief.  The 35-point success difference versus direct
+insertion is not significant after correcting all 12 MuJoCo comparisons
+(Holm $p=0.156$); it is retained as descriptive evidence.  Equal success and
+slightly lower mean force for guarded admittance again prevent a superiority
+claim.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/papers/insertbot/formal/paper_assets/insert_mujoco_trace.pdf}
+  \caption{Representative successful hard-condition native-contact trace.  A
+  47.0-N edge contact triggers two retract intervals, after which the terminal
+  realigns and advances to the seating depth.  This trace is regenerated from
+  the hashed MuJoCo report.}
+  \label{fig:trace}
+\end{figure}
+
+\section{Limitations and Hardware Gate}
+
+The result is a research draft, not a submission-ready hardware paper.  First,
+the 2.5-D contact equations and damage thresholds are engineered proxies and
+were calibrated through retained pilot runs.  The formal seeds are disjoint
+from pilots, but the protocol was not registered externally.  Second,
+ContactBelief is hand-designed; its state is not a probability distribution and
+it has not been trained against diverse connector families.  Third, the direct
+MuJoCo socket is deliberately generous and simplified.  It omits latch
+mechanics, plastic deformation, pin-level geometry, measured camera latency,
+force-sensor bandwidth, robot torque limits, and a cable-to-terminal reaction
+path.  Fourth, a synthetic damage event is not evidence that a real connector
+would be damaged at that force.  The public ALOHA audit is also a rigid simulated
+task-mismatch control, not real insertion evidence.
+
+A credible hardware gate should freeze at least three connector/cable families,
+measure actual clearance and force limits, randomize fixture and grasp pose,
+calibrate camera and six-axis force/torque sensing, and preregister success,
+peak force, cycle time, jam, part damage, and a post-insertion pull test.  The
+paired unit should be the same physical fixture perturbation across policies,
+with at least 100 trials per key comparison and no unreported exclusions.
+Guarded admittance must remain the primary classical comparator.  Only after
+passing this gate should the paper make claims about factory reliability,
+service life, labor substitution, or payback.
+
+\section{Reproducibility and Audit}
+
+The primary protocol freezes distributions, seeds, hypotheses, and multiplicity
+handling before its 200-seed-per-difficulty run.  A separate MuJoCo protocol
+records nine retained calibration iterations and freezes the collision fixture
+before the 20-seed formal audit.  Episode CSVs, aggregate CSVs, paired tests,
+protocols, sources, scene XML, representative trace, and image are SHA-256
+hashed.  The public dataset manifest, nine source files, portable cache, episode
+split, model, and offline metrics are audited separately.  An independent script
+also recomputes row counts, unique paired keys, seed schedules, scenario
+invariance, success/damage invariants, every aggregate, bootstrap interval,
+exact McNemar statistic, Holm correction, and paired Wilcoxon result.  All
+\AuditChecks{} checks pass.  Generated tables and figures are accepted only from
+that passing audit.
+
+\section{Conclusion}
+
+Contact-triggered target updates, orientation correction, unloading, and retry
+substantially improve a cable-connector insertion proxy over force-blind direct
+and spiral approaches.  The strongest result is paired: at hard difficulty,
+ContactBelief gains 33.5 points over direct insertion while lowering peak force.
+Orientation update is supported by corrected ablation tests; retract is
+directional in the primary benchmark and strongly safety-relevant in the direct
+MuJoCo audit.  Guarded admittance matches or nearly matches ContactBelief in both
+backends, so it remains the honest baseline to beat.  The next scientific step
+is not another synthetic percentage.  It is a preregistered, force-calibrated
+hardware study with real connector latching and cable reaction loads.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

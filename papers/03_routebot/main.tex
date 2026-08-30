@@ -1,0 +1,450 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{balance}
+\hypersetup{hidelinks}
+
+\definecolor{draftred}{RGB}{150,20,20}
+\newcommand{\draftwarning}{\textcolor{draftred}{DRAFT---NOT FOR SUBMISSION}}
+
+\title{Explicit Process Relations Prevent Semantic Misrouting in Long-Horizon
+Robotic Wire-Harness Assembly}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\draftwarning
+\end{center}
+
+\begin{abstract}
+Automotive wire routing requires geometric control and process semantics:
+cable segments must enter designated fixtures in order. We isolate semantic
+misrouting through paired interventions that preserve geometry, layout, physics,
+and seed while changing
+only the feasible segment--fixture assignment. Our controller represents cable
+connectivity and process correspondence as typed graph relations and grounds
+actions with graph pointers. Across 300 paired PBD episodes, the relational
+policy succeeds in 251 cases (83.7\%) versus 10 (3.3\%) for an equal-parameter
+geometry model; paired advantages are 90, 83, and 68 points across three
+difficulties. All relation-aware models share the same 251/300 outcome,
+supporting relation availability rather than one graph architecture. In
+nine-assignment counterfactuals, relation-equipped policies
+succeed in 2,340/2,700 cells versus 57/2,700 for Geometry. A direct MuJoCo audit
+gives 180/180 versus 0/180. An offline audit on 1,647 public real-robot
+cable-routing trajectories confirms a temporal action signal but not semantic
+success. DLO-Lab distinguishes ordered from wrong-order paths, yet a direct
+endpoint path scores similarly to the ordered path, exposing limited semantic
+discrimination. The evidence isolates the need for observable process
+relations; trained external semantic replication and force-controlled hardware
+remain open.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Deformable object manipulation, graph representations, industrial robotics,
+semantic task planning, wire-harness assembly.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Deformable linear objects (DLOs) combine high-dimensional geometry with
+contact-rich dynamics.  Industrial wire harnesses add a second difficulty:
+the identities of endpoints, branches, terminals, and fixture-bound segments
+matter to the manufacturing process.  Recent systems have demonstrated
+contact-aware cable shaping~\cite{chen2023contact}, twisting-based harnessing
+with force control~\cite{zhang2024twisting}, and integrated multi-robot DLO
+assembly~\cite{chen2025multirobot}.  Concurrent benchmarks now cover
+industrial clip routing and connector insertion~\cite{zhu2026wirecraft}, as
+well as broad DLO manipulation with differentiable physics
+~\cite{cao2026dlolab}.  Consequently, our contribution is not another claim of
+being the first industrial DLO simulator.
+
+We instead isolate a semantic misrouting problem.  Three cable particles may
+be physically similar and spatially adjacent, but each is bound to a different
+clip.  Once the wrong segment is latched, low geometric error is not enough to
+recover the process.  This motivates an intervention in which only the
+segment--clip relation changes.  Geometry-only shortcuts should be invariant to
+that change, whereas a relational controller should change its decision while
+preserving performance.
+
+The intended contributions are:
+
+\begin{enumerate}
+  \item a paired nine-assignment intervention, frozen by an independent
+  teacher-feasibility screen, that holds the physical RouteBot episode fixed
+  and changes only the segment--clip process relation;
+  \item a typed relational state and graph-pointer policy for long-horizon
+  grasp, transport, latch, and endpoint-placement decisions;
+  \item a controlled comparison with equal-parameter geometry ablation and an
+independently implemented ACT-style state baseline with direct, typed-pointer,
+and fixed relational-pooling variants;
+  \item failure-aware statistics, an attributed public real-data audit, and
+  cross-physics replication that distinguish semantic correctness from
+  geometric completion.
+\end{enumerate}
+
+\section{Related Work}
+
+\subsection{Industrial DLO assembly}
+
+Contact-aware planning and object-centered skills can maintain DLO shape using
+fixtures and force feedback~\cite{chen2023contact}.  Twisting-induced tension
+enables a single arm to insert wires into clamps in narrow workspaces
+~\cite{zhang2024twisting}.  Multi-robot pipelines combine perception, handover,
+and placement across the assembly workflow~\cite{chen2025multirobot}.  These
+systems provide stronger real-physics evidence than our present simulation and
+bound our claims to semantic decision making.
+
+WireCraft spans connector insertion, clip routing, and channel seating with
+articulated and deformable physics~\cite{zhu2026wirecraft}.  DLO-Lab emphasizes
+material diversity, differentiable physics, grasp sensitivity, and long-horizon
+decomposition~\cite{cao2026dlolab}.  Our experiments target a narrower but
+orthogonal question: whether a policy respects process relations under exact
+semantic counterfactuals.  External replication on one of these benchmarks is
+a required final experiment.
+
+Luo et al. collected real Franka Panda demonstrations for single- and
+multi-clip cable routing and showed that learned recovery and primitive
+selection matter over long horizons~\cite{luo2024multistage}.  We use its public
+LeRobot conversion only as an episode-disjoint offline action-interface audit;
+the release does not expose our segment--clip relation intervention.
+
+\subsection{Learning DLO dynamics and action sequences}
+
+Graph networks have modeled cable deformation for offline--online learning and
+MPC~\cite{wang2022offlineonline}; graph structure alone is therefore not a new
+contribution.  Our graph edges instead combine physical connectivity with a
+manufacturing correspondence relation.  ACT predicts action chunks with a
+conditional variational Transformer~\cite{zhao2023act}, while Diffusion Policy
+models multimodal action sequences through conditional denoising
+~\cite{chi2023diffusion}.  We use a state-based ACT adaptation as the matched
+temporal baseline and do not claim a comprehensive comparison of every
+visuomotor sequence model.
+
+\section{Problem Formulation}
+
+Let $G_t=(V_t,E_t^{p},E_t^{s})$ denote the observable state at time $t$.
+$E_t^{p}$ contains cable connectivity; $E_t^{s}$ contains process relations
+between cable segments, clips, the finish fixture, and the end effector.  A
+route is successful only if every clip $c_i$ is bound to its assigned particle
+$\pi(i)$ and the endpoint reaches its fixture.  Because a crossing in a 2-D
+projection need not be a topological crossing of the real 3-D harness, we
+report crossing-free completion as a stricter secondary safety metric rather
+than mixing it into semantic success. We report geometric coverage separately because
+$\lvert\{c_i\ \text{latched}\}\rvert=3$ does not imply semantic correctness.
+
+For a physical episode seed $s$, the counterfactual family selects one cable
+particle from each of three non-overlapping local arc-length windows.  Before
+the final learned-policy evaluation, we screened nine order-preserving candidates
+on ten held-out seeds per difficulty. All 270 semantic-completion rollouts
+succeeded, so we froze all nine assignments. Cable coordinates, clip coordinates, obstacle geometry,
+material parameters, integration noise, and initial arm state are identical.
+Only $E_t^{s}$ and the corresponding success predicate change.  This makes each
+policy comparison paired at the physical-seed level.
+
+\section{Method}
+
+\subsection{Typed relational observation}
+
+Each node contains normalized position, generic role, endpoint/junction role,
+process order, activation state, confidence, progress, and difficulty.  The
+policy adds self-loops and performs message passing over
+$\mathrm{clip}(E^p+E^s,0,1)$.  Attention pooling is concatenated with global
+state and a task embedding.
+
+\subsection{Graph-pointer action grounding}
+
+Two outputs are learned jointly: continuous action logits and pointer logits
+over nodes.  RouteBot uses one pointer.  When no segment is held, the decoder
+restricts candidates to unbound cable particles and closes the gripper only
+inside a fixed observable distance.  While carrying a segment, candidates are
+restricted to inactive fixture/finish nodes.  The policy never reads hidden
+success labels.
+
+\subsection{Baselines}
+
+The no-topology ablation keeps model parameter count and training schedule
+fixed while removing adjacency, endpoint/junction identity, process order, and
+semantic identity.  The ACT-style baseline uses a CVAE Transformer, eight-step
+action chunks, temporal ensembling, and the same typed node observations but no
+graph edges.  We evaluate direct continuous ACT and ACT-Pointer, which shares
+the candidate filter and learns a node-classification head.  The latter
+controls for the discrete action interface. ACT-RelPool additionally receives
+the same semantic adjacency but replaces learned graph propagation with fixed
+one-hop neighbor averaging before its Transformer, controlling for access to
+the relation itself.
+
+\section{Experimental Protocol}
+
+The fast backend uses position-based dynamics~\cite{muller2007pbd} for paired
+large-sample experiments.  Each main-table cell contains at least 100 unseen
+seeds at difficulties $0.2$, $0.5$, and $0.8$.  All policies receive identical
+seeds.  Binary success uses Wilson intervals; paired differences use McNemar's
+exact test and a matched odds ratio.  We additionally report clip coverage,
+topology accuracy, wrong latches, endpoint error, crossings, stretch error,
+steps, and a mutually exclusive failure taxonomy.
+
+The frozen imitation corpus contains 432 complete teacher trajectories and
+19,190 state--action samples (SHA-256 prefix \texttt{dac7dd2b8ac}).  Thirty
+training, nine validation, and nine test physical scenes are mutually disjoint.
+Every physical scene is replayed under all nine assignments, yielding 270/81/81
+training/validation/test trajectories; thus assignment identity cannot be
+confounded with geometry within a scene.  The target-particle identity is not a
+unary feature: changing an assignment changes only semantic adjacency edges and
+the success predicate.
+
+TopoHarness and its Geometry ablation use identical 64-dimensional, three-layer
+networks and optimization schedules.  Both ACT variants use a 48-dimensional
+one-layer CVAE Transformer, eight-action chunks, and a two-simulator-step control
+stride matching demonstration sampling.  Model selection uses validation loss;
+no frozen evaluation seed is used for architecture or assignment selection.
+
+For external real-data grounding, we pin the public Berkeley Cable Routing
+LeRobot conversion at commit
+\texttt{20a7774a714a5daf56b220e01635425f2cb9745b}.  Its 42,328 frames form
+1,647 complete real-robot teleoperation episodes with four camera views.  We
+split whole episodes 70/15/15 into 1,153/247/247 train/validation/test episodes,
+tune ridge regularization on validation episodes only, and report the four
+nonconstant Cartesian action dimensions.  A state-only ridge, previous-action
+control, and state-plus-previous-action ridge are evaluated on the same held-out
+episodes.  The latter is an audit baseline, not our semantic-routing method.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/papers/routebot/public_real/berkeley_real_multiview.png}
+  \caption{Aligned views from the pinned public real-robot cable-routing data
+  (Berkeley Cable Routing, CC BY 4.0).  Images are evidence of the external data
+  interface, not RouteBot rollouts.}
+  \label{fig:berkeley-real}
+\end{figure}
+
+The three-dimensional replication uses MuJoCo~\cite{todorov2012mujoco} cable
+elasticity.  Detailed UR10e and Robotiq meshes are kinematic visual twins with
+collisions disabled; they must not be interpreted as torque-controlled robot
+dynamics.  For the direct audit, each control step reconstructs the same
+29-node typed graph from current MuJoCo cable, fixture, finish, and task-space
+gripper poses.  The frozen network output is mapped back to a MuJoCo mocap
+target; grasp, latch, and endpoint events are detected solely from native
+MuJoCo body distances and constraints.  No PBD state or event is read.  Small
+paired fixture perturbations define physical seeds, while the nine-assignment
+intervention changes only semantic graph edges and the success predicate.
+
+For an independently maintained simulator sanity check, we pin DLO-Lab at
+commit \texttt{c5026a9} and its prescribed Mushroom-RL fork at
+\texttt{ec33647}.  In the official \texttt{wiring\_post} environment, four
+deterministic open-loop paths run in one matched four-environment batch: no
+action, a straight endpoint move, a deliberately wrong fixture order, and the
+target-consistent fixture order.  We report DLO-Lab's native geometric reward
+without modification, plus ordered curve and fixture-relation diagnostics as
+an explicitly labeled RouteBot extension.  This experiment tests executable
+cross-simulator plumbing and metric sensitivity, not a trained-policy claim.
+
+\section{Results}
+
+\begin{table}[t]
+  \centering
+  \caption{Paired RouteBot results over all frozen difficulties. Semantic
+  success is primary; crossing-free success is the strict 2-D shape metric.}
+  \label{tab:main}
+  \IfFileExists{../../artifacts/papers/routebot/final/main_table/route_main_table.tex}
+    {{\small\setlength{\tabcolsep}{2.5pt}%
+      \input{../../artifacts/papers/routebot/final/main_table/route_main_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen table generated by
+      \texttt{sim-eval-route-paper}}}}
+\end{table}
+
+\paragraph{Frozen paired PBD main table.}
+TopoHarness completes 251/300 episodes (83.7\%, Wilson 95\% CI
+$[79.1,87.4]$), compared with 10/300 for the equal-parameter Geometry model
+(3.3\%, $[1.8,6.0]$).  The paired success differences at difficulties 0.2,
+0.5, and 0.8 are 0.90, 0.83, and 0.68; the corresponding Holm-adjusted exact
+McNemar values are $5.33\times10^{-26}$, $5.79\times10^{-24}$, and
+$2.29\times10^{-18}$.  Across all difficulties, 242 physical cells succeed only
+with TopoHarness, one succeeds only with Geometry, nine succeed with both, and
+48 fail with both.  The scripted teacher succeeds in 300/300 episodes, showing
+that the residual 49 TopoHarness failures are policy errors rather than an
+infeasible test set.
+
+The architecture ablation changes the interpretation.  ACT-RelPool,
+Semantic-only, the no-unary-ID/order-feature model, and the 20\% and 50\% data
+models all produce exactly the same 251/300 success count and failure partition
+as TopoHarness.  Physical-only reaches 1/300, direct ACT and ACT-Pointer reach
+0/300, and random control reaches 0/300.  Thus this environment identifies the
+necessity of an observable process relation and a relation-grounded action
+interface, but it does not identify learned message passing, unary roles, or the
+full training-set size as separately necessary.  We treat this saturation as a
+benchmark limitation rather than an architectural win.
+
+\begin{table}[t]
+  \centering
+  \caption{Direct MuJoCo pose-observation/task-space-control audit.  The
+  detailed robot is a visual IK twin, not a torque-controlled arm.}
+  \label{tab:mujoco-direct}
+  \IfFileExists{../../artifacts/papers/routebot/final/mujoco_direct/route_mujoco_direct_table.tex}
+    {\input{../../artifacts/papers/routebot/final/mujoco_direct/route_mujoco_direct_table.tex}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen table generated by
+      \texttt{sim-eval-route-mujoco-direct}}}}
+\end{table}
+
+\paragraph{Frozen direct MuJoCo audit.}
+Across 20 paired fixture perturbations and all nine segment assignments,
+TopoHarness and the scripted teacher each complete 180/180 episodes; the
+equal-parameter geometry policy completes 0/180.  The Wilson interval is
+$[0.979,1.000]$ for TopoHarness and $[0.000,0.021]$ for Geometry.  All 180
+discordant pairs favor TopoHarness (two-sided exact McNemar test with
+Holm adjustment, $p=2.61\times10^{-54}$).  This isolates relation-sensitive
+closed-loop decisions under a second cable dynamics backend, but the mocap
+control abstraction prevents a joint-level or force-control claim.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/papers/routebot/final/mujoco_direct_visual/route_mujoco_direct_final.png}
+  \caption{Frozen TopoHarness final state under direct MuJoCo observation and
+  task-space action control (assignment 7--15--23).  The three semantic
+  latches and endpoint succeed; the rendered UR10e is a visual IK twin.}
+  \label{fig:mujoco-direct}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Episode-disjoint offline action prediction on the public real-robot
+  Berkeley Cable Routing data.  These are not closed-loop success rates.}
+  \label{tab:public-real}
+  \IfFileExists{../../artifacts/papers/routebot/public_real/route_public_table.tex}
+    {{\small\setlength{\tabcolsep}{1.5pt}%
+      \input{../../artifacts/papers/routebot/public_real/route_public_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen public real-data audit table}}}
+\end{table}
+
+\paragraph{Frozen public real-data audit.}
+On 247 held-out real-robot episodes, adding the previously executed action to
+the state ridge reduces mean per-episode active-action RMSE by 11.6\% relative
+to action persistence (paired difference $-0.0191$, 95\% episode-bootstrap CI
+$[-0.0206,-0.0176]$).  It improves 233 of 247 episodes (two-sided exact sign
+test $p=2.33\times10^{-52}$).  This confirms that the data pipeline detects a
+real temporal signal; it cannot test semantic binding or closed-loop routing.
+
+\begin{table}[!b]
+  \centering
+  \caption{Exact semantic counterfactual over nine assignments. Each policy
+  observes identical physical states within a seed; only relation edges and the
+  corresponding success predicate change.}
+  \label{tab:counterfactual}
+  \IfFileExists{../../artifacts/papers/routebot/final/counterfactual/route_counterfactual_table.tex}
+    {{\small\setlength{\tabcolsep}{2.5pt}%
+      \input{../../artifacts/papers/routebot/final/counterfactual/route_counterfactual_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen table generated by
+      \texttt{sim-eval-route-counterfactual}}}}
+\end{table}
+\FloatBarrier
+
+\paragraph{Frozen nine-assignment counterfactual.}
+Across 2,700 physical-seed--assignment cells per policy, TopoHarness succeeds
+in 2,340 (86.7\%, Wilson 95\% CI $[85.3,87.9]$), versus 57 for Geometry
+(2.1\%, $[1.6,2.7]$), 268 for ACT-Pointer (9.9\%, $[8.9,11.1]$), and 2,700
+for the teacher.  TopoHarness alone succeeds in 2,284 Geometry-paired cells;
+Geometry alone succeeds in one, while 56 succeed and 359 fail with both.  The
+aggregate exact McNemar value is $6.41\times10^{-685}$.  More conservatively,
+each of the 27 assignment--difficulty comparisons has a 60--100 percentage
+point advantage over Geometry, and the largest Holm-adjusted value is
+$1.06\times10^{-16}$.  ACT-RelPool again has exactly the same 2,340 successes
+and failure partition as TopoHarness.  Its per-assignment success spans
+83--100\%, 76--100\%, and 60--94\% at increasing difficulty; the wider range
+at high difficulty bounds any claim of perfect assignment invariance.
+
+\begin{figure}[!b]
+  \centering
+  \includegraphics[width=\columnwidth]{%
+    ../../artifacts/papers/routebot/final/counterfactual/route_counterfactual_heatmap.pdf}
+  \caption{Cellwise semantic success for the exact relation intervention
+  (100 paired physical seeds per cell; shared 0--100\% scale). TopoHarness and
+  ACT-RelPool are cellwise identical. ACT-Pointer succeeds only on isolated
+  assignments, revealing assignment-specific shortcuts.}
+  \label{fig:counterfactual-heatmap}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Matched open-loop sanity check in official DLO-Lab
+  \texttt{wiring\_post}. Native $R$ is unmodified; relation and winding
+  diagnostics are RouteBot extensions.}
+  \label{tab:dlolab}
+  \IfFileExists{../../artifacts/papers/routebot/final/dlolab_external/matched_paths/matched_path_table.tex}
+    {\resizebox{\columnwidth}{!}{%
+      \input{../../artifacts/papers/routebot/final/dlolab_external/matched_paths/matched_path_table.tex}}}
+    {\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{%
+      \centering Frozen DLO-Lab matched-path table}}}
+\end{table}
+\FloatBarrier
+
+\paragraph{Official DLO-Lab execution sanity check.}
+All four 30-vertex rollouts remain finite. The ordered fixture route reaches
+native reward 0.975 and ordered-point RMSE 1.46 cm, versus 0.571 and 12.30 cm
+for the wrong-order path. Its fixture-relation angular error is 0.073 rad,
+compared with 0.785 rad for wrong order. However, the endpoint-straight path
+also reaches reward 0.970, 2.73 cm RMSE, and a 0.069-rad relation error.
+Therefore this result validates the pinned external environment and detects a
+gross wrong-order path, but the official geometric target does not isolate
+RouteBot's semantic intervention. We do not count it as trained external
+semantic replication.
+
+\section{Limitations and Claim Boundary}
+
+The current environments are simulated, the PBD backend is two-dimensional and
+uncalibrated, and the detailed robot arms do not participate in cable contact.
+No result in this paper is a production-line success rate.  The counterfactual
+isolates a process relation within a simulator; it does not establish causal
+effects on real hardware. Force-controlled clip insertion, perception from
+raw images, cable-parameter identification, and trained external closed-loop
+semantic replication remain mandatory before a hardware-level claim. The
+single-seed DLO-Lab matched-path check is open loop and its endpoint-straight
+control nearly matches the ordered route, so it cannot satisfy that semantic
+replication requirement. The direct MuJoCo audit uses
+current three-dimensional object poses but a mocap task-space gripper, so it
+does not validate contact-force regulation or joint-level control.  The
+public-data experiment is an offline action audit and does not satisfy the
+external replication gate.
+
+\section{Ethical and Societal Considerations}
+
+The study uses synthetic simulator trajectories and attributed public robot
+teleoperation traces; we conduct no new human-subject data collection and use
+no personal data.  Wire-harness
+automation could reduce repetitive ergonomic strain, but it
+could also displace manual assembly work or intensify monitoring if deployed
+without worker participation.  The present controller is not safety certified:
+its outputs must not command production robots without guarded workcells, risk
+assessment, force limits, and qualified human supervision.  We therefore report
+only simulator evidence and publish failure cases as well as successes.  The
+models are small CPU-trainable baselines; training time and hardware are included
+in the reproducibility record so computational cost is auditable.
+
+\section{Reproducibility}
+
+The anonymous package will include episode-disjoint demonstrations, hashes,
+frozen checkpoints, all seeds and configurations, per-episode CSV files,
+statistical scripts, MJCF sources, retained third-party licenses, and commands
+that regenerate every table and figure.  The independent ACT adaptation states
+its differences from the official implementation and does not copy upstream
+source code. The external DLO-Lab asset archive is not redistributed because
+it contains no asset license; the package records its official URL, exact hash,
+required-file hash, and a deterministic local verification command.
+
+\balance
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

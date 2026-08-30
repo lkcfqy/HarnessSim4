@@ -1,0 +1,61 @@
+\begin{thebibliography}{10}
+
+\bibitem{cao2026dlolab}
+Junyi Cao, Yian Wang, Ziyan Xiong, Chunru Lin, Zhehuan Chen, and Chuang Gan.
+\newblock Dlo-lab: Benchmarking deformable linear object manipulations with
+  differentiable physics.
+\newblock In {\em International Conference on Machine Learning}, 2026.
+
+\bibitem{chen2023contact}
+Kejia Chen, Zhenshan Bing, Fan Wu, Yuan Meng, Andre Kraft, Sami Haddadin, and
+  Alois Knoll.
+\newblock Contact-aware shaping and maintenance of deformable linear objects
+  with fixtures, 2023.
+
+\bibitem{chen2025multirobot}
+Kejia Chen, Celina Dettmering, Florian Pachler, Zhuo Liu, Yue Zhang, Tailai
+  Cheng, Jonas Dirr, Zhenshan Bing, Alois Knoll, and Ruediger Daub.
+\newblock Multi-robot assembly of deformable linear objects using multi-modal
+  perception, 2025.
+
+\bibitem{chi2023diffusion}
+Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin
+  Burchfiel, and Shuran Song.
+\newblock Diffusion policy: Visuomotor policy learning via action diffusion.
+\newblock In {\em Robotics: Science and Systems}, 2023.
+
+\bibitem{muller2007pbd}
+Matthias M{"u}ller, Bruno Heidelberger, Marcus Hennix, and John Ratcliff.
+\newblock Position based dynamics.
+\newblock {\em Journal of Visual Communication and Image Representation},
+  18(2):109--118, 2007.
+
+\bibitem{todorov2012mujoco}
+Emanuel Todorov, Tom Erez, and Yuval Tassa.
+\newblock Mujoco: A physics engine for model-based control.
+\newblock In {\em IEEE/RSJ International Conference on Intelligent Robots and
+  Systems}, pages 5026--5033, 2012.
+
+\bibitem{wang2022offlineonline}
+Changhao Wang, Yuyou Zhang, Xiang Zhang, Zheng Wu, Xinghao Zhu, Shiyu Jin,
+  Te~Tang, and Masayoshi Tomizuka.
+\newblock Offline-online learning of deformation model for cable manipulation
+  with graph neural networks, 2022.
+
+\bibitem{zhang2024twisting}
+Xiang Zhang, Hsien-Chung Lin, Yu~Zhao, and Masayoshi Tomizuka.
+\newblock Harnessing with twisting: Single-arm deformable linear object
+  manipulation for industrial harnessing task, 2024.
+
+\bibitem{zhao2023act}
+Tony~Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn.
+\newblock Learning fine-grained bimanual manipulation with low-cost hardware.
+\newblock In {\em Robotics: Science and Systems}, 2023.
+
+\bibitem{zhu2026wirecraft}
+Chongyu Zhu, Ramy ElMallah, Hyegang Kim, Zachary Tang, Jiachen Rao, Artem
+  Arutyunov, Seungyeon Ha, and Chi-Guhn Lee.
+\newblock Wirecraft: A simulation benchmark for industrial dlo manipulation,
+  2026.
+
+\end{thebibliography}

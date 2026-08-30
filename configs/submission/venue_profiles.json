@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-08-27",
+  "status": "staging_only_until_hardware_gates_pass",
+  "sources": {
+    "tase_information_for_authors": "https://www.ieee-ras.org/publications/t-ase/information-for-authors-t-ase/",
+    "tase_submission_checklist": "https://www.ieee-ras.org/publications/t-ase/information-for-authors-t-ase/author-checklist-for-papers-submitted-to-ieee-t-ase/",
+    "tase_note_to_practitioners": "https://www.ieee-ras.org/publications/t-ase/information-for-authors-t-ase/t-ase-note-to-practitioners/",
+    "tase_methodology_and_application_codes": "https://www.ieee-ras.org/publications/t-ase/information-for-authors-t-ase/t-ase-journal-primary-methodologies-and-applications/",
+    "tro_information_for_authors": "https://www.ieee-ras.org/publications/t-ro/t-ro-information-for-authors/"
+  },
+  "venues": {
+    "T-ASE": {
+      "full_name": "IEEE Transactions on Automation Science and Engineering",
+      "paper_type": "Regular Paper",
+      "documentclass": "\\documentclass[journal]{IEEEtran}",
+      "double_anonymous": true,
+      "abstract_max_words": 200,
+      "keywords_min": 2,
+      "keywords_max": 5,
+      "note_to_practitioners": {
+        "required": true,
+        "min_words": 100,
+        "max_words": 300
+      },
+      "target_max_pages": 12,
+      "target_page_limit_kind": "repository_target_before_overlength_charges",
+      "minimum_pdf_version": "1.4",
+      "multimedia_max_bytes": 52428800
+    },
+    "T-RO": {
+      "full_name": "IEEE Transactions on Robotics",
+      "paper_type": "Regular Paper",
+      "documentclass": "\\documentclass[journal]{IEEEtran}",
+      "double_anonymous": true,
+      "abstract_max_words": 200,
+      "keywords_min": 2,
+      "keywords_max": 5,
+      "note_to_practitioners": {
+        "required": false,
+        "min_words": 0,
+        "max_words": 0
+      },
+      "first_submission_max_pages": 18,
+      "final_max_pages": 20,
+      "minimum_pdf_version": "1.4",
+      "multimedia_max_bytes": 52428800,
+      "multimedia_summary_max_sentences": 5
+    }
+  },
+  "papers": {
+    "inspectbot": {
+      "ordinal": 1,
+      "venue": "T-ASE",
+      "title": "Topology-Risk Active Inspection for Wire Harnesses: Public Cable Defects, Paired Budget Tests, and Executable Robot Scans",
+      "source_tex": "papers/01_inspectbot/main.tex",
+      "build_log": "papers/01_inspectbot/main.log",
+      "release_pdf": "output/pdf/01_inspectbot_research_draft.pdf",
+      "package_dir": "submissions/01_inspectbot_tase",
+      "hardware_gate": "artifacts/hardware/inspectbot/hardware_gate_audit.json",
+      "methodology_codes": {
+        "primary": "4 Computer Vision",
+        "secondary": "15 Risk Assessment"
+      },
+      "application_codes": {
+        "primary": "23 Testing and Quality Control",
+        "secondary": "2 Automotive"
+      },
+      "video": {
+        "source": "artifacts/showcase/harnesssim4_four_robot_showcase.mp4",
+        "filename": "inspectbot_digital_twin.mp4",
+        "start_s": 2.9166666667,
+        "duration_s": 6.25
+      }
+    },
+    "insertbot": {
+      "ordinal": 2,
+      "venue": "T-ASE",
+      "title": "Contact-State Recovery for Cable-Connector Insertion: Paired Force-Safety Tests and a Direct MuJoCo Audit",
+      "source_tex": "papers/02_insertbot/main.tex",
+      "build_log": "papers/02_insertbot/build/main.log",
+      "release_pdf": "output/pdf/02_insertbot_research_draft.pdf",
+      "package_dir": "submissions/02_insertbot_tase",
+      "hardware_gate": "artifacts/hardware/insertbot/hardware_gate_audit.json",
+      "methodology_codes": {
+        "primary": "5 Control Theory",
+        "secondary": "19 System Diagnosis"
+      },
+      "application_codes": {
+        "primary": "13 Manufacturing",
+        "secondary": "2 Automotive"
+      },
+      "video": {
+        "source": "artifacts/showcase/harnesssim4_four_robot_showcase.mp4",
+        "filename": "insertbot_digital_twin.mp4",
+        "start_s": 9.1666666667,
+        "duration_s": 6.25
+      }
+    },
+    "routebot": {
+      "ordinal": 3,
+      "venue": "T-RO",
+      "title": "Explicit Process Relations Prevent Semantic Misrouting in Long-Horizon Robotic Wire-Harness Assembly",
+      "source_tex": "papers/03_routebot/main.tex",
+      "build_log": "papers/03_routebot/build/main.log",
+      "release_pdf": "output/pdf/03_routebot_research_draft.pdf",
+      "package_dir": "submissions/03_routebot_tro",
+      "hardware_gate": "artifacts/hardware/routebot/hardware_gate_audit.json",
+      "scope_topics": [
+        "industrial robotics",
+        "deformable-object manipulation",
+        "robot learning and semantic task planning"
+      ],
+      "video": {
+        "source": "artifacts/showcase/harnesssim4_four_robot_showcase.mp4",
+        "filename": "routebot_digital_twin.mp4",
+        "start_s": 15.4166666667,
+        "duration_s": 6.25
+      }
+    },
+    "branchbot": {
+      "ordinal": 4,
+      "venue": "T-RO",
+      "title": "Semantic Counterfactuals Expose Branch-Identity Shortcuts in Bimanual Wire-Harness Manipulation",
+      "source_tex": "papers/04_branchbot/main.tex",
+      "build_log": "papers/04_branchbot/main.log",
+      "release_pdf": "output/pdf/04_branchbot_research_draft.pdf",
+      "package_dir": "submissions/04_branchbot_tro",
+      "hardware_gate": "artifacts/hardware/branchbot/hardware_gate_audit.json",
+      "scope_topics": [
+        "cooperative manipulation",
+        "deformable-object manipulation",
+        "robot learning and semantic grounding"
+      ],
+      "video": {
+        "source": "artifacts/showcase/harnesssim4_four_robot_showcase.mp4",
+        "filename": "branchbot_digital_twin.mp4",
+        "start_s": 21.6666666667,
+        "duration_s": 6.25
+      }
+    }
+  }
+}

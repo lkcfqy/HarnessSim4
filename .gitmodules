@@ -1,0 +1,9 @@
+[submodule "cableinspect-ad"]
+	path = third_party/CableInspect-AD-code
+	url = https://github.com/mila-iqia/cableinspect-ad-code.git
+[submodule "dlo-lab"]
+	path = third_party/DLO-Lab
+	url = https://github.com/UMass-Embodied-AGI/DLO-Lab.git
+[submodule "mushroom-rl"]
+	path = third_party/mushroom-rl
+	url = https://github.com/XJay18/mushroom-rl.git

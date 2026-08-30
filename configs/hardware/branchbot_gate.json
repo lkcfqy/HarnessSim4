@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "robot": "branchbot",
+  "protocol_version": "1.0-preregistration-template",
+  "claim_boundary": "Vision-based identity-preserving manipulation of real 3--5 branch harnesses; no unattended-production claim.",
+  "primary_policy": "topoharness",
+  "comparators": [
+    "act_pointer",
+    "geometry"
+  ],
+  "required_conditions": [
+    "canonical",
+    "permuted",
+    "occluded"
+  ],
+  "minimum_complete_pairs_per_comparison": 100,
+  "minimum_trials_per_policy": 100,
+  "required_columns": [
+    "trial_id",
+    "pair_id",
+    "timestamp_utc",
+    "specimen_id",
+    "setup_id",
+    "semantic_assignment",
+    "branch_count",
+    "condition",
+    "policy",
+    "success",
+    "identity_correct",
+    "collision",
+    "safety_stop",
+    "operator_intervention",
+    "initial_crossing_count",
+    "final_crossing_count",
+    "minimum_separation_mm",
+    "cycle_time_s",
+    "path_length_m",
+    "failure_type",
+    "notes"
+  ],
+  "optional_value_columns": [
+    "notes"
+  ],
+  "binary_columns": [
+    "success",
+    "identity_correct",
+    "collision",
+    "safety_stop",
+    "operator_intervention"
+  ],
+  "numeric_columns": [
+    "branch_count",
+    "initial_crossing_count",
+    "final_crossing_count",
+    "minimum_separation_mm",
+    "cycle_time_s",
+    "path_length_m"
+  ],
+  "nonnegative_columns": [
+    "branch_count",
+    "initial_crossing_count",
+    "final_crossing_count",
+    "minimum_separation_mm",
+    "cycle_time_s",
+    "path_length_m"
+  ],
+  "minimum_distinct": {
+    "specimen_id": 20,
+    "setup_id": 2,
+    "semantic_assignment": 6,
+    "branch_count": 3
+  },
+  "success_rules": {
+    "must_be_one": [
+      "identity_correct"
+    ],
+    "must_be_zero": [
+      "collision",
+      "safety_stop",
+      "operator_intervention",
+      "final_crossing_count"
+    ]
+  },
+  "required_provenance_fields": [
+    "state",
+    "study_id",
+    "site_id",
+    "protocol_sha256",
+    "protocol_frozen_at_utc",
+    "collection_started_at_utc",
+    "collection_completed_at_utc",
+    "operator_ids",
+    "independent_reviewer_id",
+    "robot_serial",
+    "software_revision"
+  ],
+  "required_calibration_kinds": [
+    "dual_robot_base",
+    "hand_eye",
+    "robot_tcp_left",
+    "robot_tcp_right"
+  ],
+  "minimum_media_items": 12,
+  "required_media_kinds": [
+    "dual_arm_overview_video",
+    "identity_closeup",
+    "safety_view"
+  ],
+  "reported_metrics": [
+    "final_crossing_count",
+    "minimum_separation_mm",
+    "cycle_time_s",
+    "path_length_m"
+  ]
+}
